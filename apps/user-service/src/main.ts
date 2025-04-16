@@ -3,9 +3,8 @@ import cors from "cors";
 import { errorMiddleware } from "@packages/error-handler/error-middleware";
 import cookieParser from "cookie-parser";
 import router from "./routes/user.routes";
-
-// import swaggerUi from "swagger-ui-express";
-// const swaggerDocument = require("./swagger-output.json");
+import swaggerUi from "swagger-ui-express";
+const swaggerDocument = require("./swagger-output.json");
 
 const app = express();
 
@@ -24,10 +23,10 @@ app.get("/", (req, res) => {
   res.send({ message: "Hello User API" });
 });
 
-// app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
-// app.get("/docs-json", (req, res) => {
-//   res.json(swaggerDocument);
-// });
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+app.get("/docs-json", (req, res) => {
+  res.json(swaggerDocument);
+});
 
 // Routes
 app.use("/api", router);

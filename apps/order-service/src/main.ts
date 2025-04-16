@@ -5,9 +5,8 @@ import cookieParser from "cookie-parser";
 import router from "./routes/order.route";
 import { createOrder } from "./controller/order.controller";
 import bodyParser from "body-parser";
-
-// import swaggerUi from "swagger-ui-express";
-// const swaggerDocument = require("./swagger-output.json");
+import swaggerUi from "swagger-ui-express";
+const swaggerDocument = require("./swagger-output.json");
 
 const app = express();
 
@@ -36,10 +35,10 @@ app.get("/", (req, res) => {
   res.send({ message: "Hello Order API" });
 });
 
-// app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
-// app.get("/docs-json", (req, res) => {
-//   res.json(swaggerDocument);
-// });
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+app.get("/docs-json", (req, res) => {
+  res.json(swaggerDocument);
+});
 
 // Routes
 app.use("/api", router);
