@@ -17,13 +17,13 @@ export async function createWebSocketServer(server: HttpServer) {
   wss.on("connection", (ws: WebSocket, req) => {
     console.log("New WebSocket connection established!");
 
-    // Step 1: First message is userId for registration
+    // First message is userId for registration
     ws.once("message", (userIdBuffer) => {
       const userId = userIdBuffer.toString();
       console.log(`Registered WebSocket for userId: ${userId}`);
       connectedUsers.set(userId, ws);
 
-      // Step 2: Now listen for chat messages
+      // Now listen for chat messages
       ws.on("message", async (rawMessage) => {
         try {
           const data = JSON.parse(rawMessage.toString());
@@ -41,7 +41,7 @@ export async function createWebSocketServer(server: HttpServer) {
             timestamp: new Date().toISOString(), // Server-side timestamp
           };
 
-          // 1. Instantly send to receiver if online
+          // Instantly send to receiver if online
           const receiverSocket = connectedUsers.get(toUserId);
           if (receiverSocket && receiverSocket.readyState === WebSocket.OPEN) {
             receiverSocket.send(JSON.stringify(messagePayload));
@@ -50,7 +50,7 @@ export async function createWebSocketServer(server: HttpServer) {
             console.log(`User ${toUserId} is offline. Message will be stored.`);
           }
 
-          // 2. Push to Kafka for persistence later
+          // Push to Kafka for persistence later
           await producer.send({
             topic: "chat.new_message",
             messages: [
