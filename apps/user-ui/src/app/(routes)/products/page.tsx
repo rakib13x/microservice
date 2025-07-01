@@ -1,5 +1,4 @@
 "use client";
-
 import { useQuery } from "@tanstack/react-query";
 import ProductCard from "apps/user-ui/src/shared/components/cards/product-card";
 import axiosInstance from "apps/user-ui/src/utils/axiosInstance";
@@ -23,8 +22,6 @@ const Page = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [tempPriceRange, setTempPriceRange] = useState([0, 1199]);
 
-  const sizes = ["XS", "S", "M", "L", "XL", "XXL"];
-
   const colors = [
     { name: "Black", code: "#000" },
     { name: "Red", code: "#ff0000" },
@@ -34,6 +31,8 @@ const Page = () => {
     { name: "Magenta", code: "#ff00ff" },
     { name: "Cyan", code: "#00ffff" },
   ];
+
+  const sizes = ["XS", "S", "M", "L", "XL", "XXL"];
 
   const updateURL = () => {
     const params = new URLSearchParams();
@@ -50,6 +49,7 @@ const Page = () => {
   const fetchFilteredProducts = async () => {
     setIsProductLoading(true);
     try {
+      console.log("call");
       const query = new URLSearchParams();
 
       query.set("priceRange", priceRange.join(","));
@@ -57,7 +57,8 @@ const Page = () => {
         query.set("categories", selectedCategories.join(","));
       if (selectedColors.length > 0)
         query.set("colors", selectedColors.join(","));
-      if (selectedSizes.length > 0) query.set("sizes", selectedSizes.join(","));
+      if (selectedSizes?.length > 0)
+        query.set("sizes", selectedSizes.join(","));
       query.set("page", page.toString());
       query.set("limit", "12");
 
@@ -77,6 +78,15 @@ const Page = () => {
     updateURL();
     fetchFilteredProducts();
   }, [priceRange, selectedCategories, selectedColors, selectedSizes, page]);
+
+  const { data, isLoading } = useQuery({
+    queryKey: ["categories"],
+    queryFn: async () => {
+      const res = await axiosInstance.get("/product/api/get-categories");
+      return res.data;
+    },
+    staleTime: 1000 * 60 * 30,
+  });
 
   const toggleCategory = (label: string) => {
     setSelectedCategories((prev) =>
@@ -98,20 +108,11 @@ const Page = () => {
     );
   };
 
-  const { data, isLoading } = useQuery({
-    queryKey: ["categories"],
-    queryFn: async () => {
-      const res = await axiosInstance.get("/product/api/get-categories");
-      return res.data;
-    },
-    staleTime: 1000 * 60 * 30,
-  });
-
   return (
     <div className="w-full bg-[#f5f5f5] pb-10">
       <div className="w-[90%] lg:w-[80%] m-auto">
         <div className="pb-[50px]">
-          <h1 className="md:pt-[40px] font-[500] text-[44px] leading-[1] mb-[14px] font-jost">
+          <h1 className="md:pt-[40px] font-medium text-[44px] leading-1 mb-[14px] font-jost">
             All Products
           </h1>
           <Link href="/" className="text-[#55585b] hover:underline">
@@ -122,8 +123,8 @@ const Page = () => {
         </div>
 
         <div className="w-full flex flex-col lg:flex-row gap-8">
-          {/* Sidebar */}
-          <aside className="w-full lg:w-[270px] !rounded bg-white p-4 space-y-6 shadow-sm">
+          {/* sidebar */}
+          <aside className="w-full lg:w-[270px] !rounded bg-white p-4 space-y-6 shadow-md">
             <h3 className="text-xl font-Poppins font-medium">Price Filter</h3>
             <div className="ml-2">
               <Range
@@ -256,7 +257,7 @@ const Page = () => {
             </ul>
           </aside>
 
-          {/* Product Grid */}
+          {/* product grid */}
           <div className="flex-1 px-2 lg:px-3">
             {isProductLoading ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-5">

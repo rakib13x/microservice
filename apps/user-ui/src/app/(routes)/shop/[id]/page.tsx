@@ -1,6 +1,6 @@
 import SellerProfile from "apps/user-ui/src/shared/modules/seller/seller-profile";
 import axiosInstance from "apps/user-ui/src/utils/axiosInstance";
-import type { Metadata } from "next";
+import { Metadata } from "next";
 import React from "react";
 
 async function fetchSellerDetails(id: string) {
@@ -8,13 +8,14 @@ async function fetchSellerDetails(id: string) {
   return response.data;
 }
 
-// Dynamic Metadata Generator
+// Dynamic metadata generator
 export async function generateMetadata({
   params,
 }: {
   params: { id: string };
 }): Promise<Metadata> {
   const data = await fetchSellerDetails(params.id);
+
   return {
     title: `${data?.shop?.name} | Eshop Marketplace`,
     description:
@@ -31,7 +32,7 @@ export async function generateMetadata({
           url: data?.shop?.avatar || "/default-shop.png",
           width: 800,
           height: 600,
-          alt: data?.shop.name || "Shop Logo",
+          alt: data?.shop?.name || "Shop Logo",
         },
       ],
     },
@@ -46,11 +47,13 @@ export async function generateMetadata({
   };
 }
 
-export default async function Page({ params }: { params: { id: string } }) {
+const Page = async ({ params }: { params: { id: string } }) => {
   const data = await fetchSellerDetails(params.id);
   return (
     <div>
       <SellerProfile shop={data?.shop} followersCount={data?.followersCount} />
     </div>
   );
-}
+};
+
+export default Page;

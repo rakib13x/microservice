@@ -26,6 +26,7 @@ type Store = {
     location: any,
     deviceInfo: any
   ) => void;
+
   addToWishlist: (
     product: Product,
     user: any,
@@ -59,15 +60,16 @@ export const useStore = create<Store>()(
               ),
             };
           }
-          return { cart: [...state.cart, { ...product, quantity: 1 }] };
+          return {
+            cart: [...state.cart, { ...product, quantity: product?.quantity }],
+          };
         });
-
-        // Send Kafka Event
+        // send kafka event
         if (user?.id && location && deviceInfo) {
           sendKafkaEvent({
             userId: user?.id,
-            productId: product.id,
-            shopId: product.shopId,
+            productId: product?.id,
+            shopId: product?.shopId,
             action: "add_to_cart",
             country: location?.country || "Unknown",
             city: location?.city || "Unknown",
@@ -76,21 +78,21 @@ export const useStore = create<Store>()(
         }
       },
 
-      // Remove from Cart
+      // remove from cart
       removeFromCart: (id, user, location, deviceInfo) => {
-        // Find the product BEFORE calling `set`
-        const removedProduct = get().cart.find((item) => item.id === id);
+        // find the product before calling set
+        const removeProduct = get().cart.find((item) => item.id === id);
 
         set((state) => ({
-          cart: state.cart.filter((item) => item.id !== id),
+          cart: state.cart?.filter((item) => item.id !== id),
         }));
 
-        // Send Kafka Event
-        if (user?.id && location && deviceInfo && removedProduct) {
+        // send kafka event
+        if (user?.id && location && deviceInfo && removeProduct) {
           sendKafkaEvent({
             userId: user?.id,
-            productId: id,
-            shopId: removedProduct.shopId,
+            productId: removeProduct?.id,
+            shopId: removeProduct?.shopId,
             action: "remove_from_cart",
             country: location?.country || "Unknown",
             city: location?.city || "Unknown",
@@ -99,7 +101,7 @@ export const useStore = create<Store>()(
         }
       },
 
-      // Add to Wishlist
+      // Add to wishlist
       addToWishlist: (product, user, location, deviceInfo) => {
         set((state) => {
           if (state.wishlist.find((item) => item.id === product.id))
@@ -107,12 +109,12 @@ export const useStore = create<Store>()(
           return { wishlist: [...state.wishlist, product] };
         });
 
-        // Send Kafka Event
+        // send kafka event
         if (user?.id && location && deviceInfo) {
           sendKafkaEvent({
             userId: user?.id,
-            productId: product.id,
-            shopId: product.shopId,
+            productId: product?.id,
+            shopId: product?.shopId,
             action: "add_to_wishlist",
             country: location?.country || "Unknown",
             city: location?.city || "Unknown",
@@ -121,21 +123,20 @@ export const useStore = create<Store>()(
         }
       },
 
-      // Remove from Wishlist
       removeFromWishlist: (id, user, location, deviceInfo) => {
         // Find the product BEFORE calling `set`
-        const removedProduct = get().wishlist.find((item) => item.id === id);
+        const removeProduct = get().wishlist.find((item) => item.id === id);
 
         set((state) => ({
           wishlist: state.wishlist.filter((item) => item.id !== id),
         }));
 
-        // Send Kafka Event
-        if (user?.id && location && deviceInfo && removedProduct) {
+        // send kafka event
+        if (user?.id && location && deviceInfo && removeProduct) {
           sendKafkaEvent({
             userId: user?.id,
-            productId: id,
-            shopId: removedProduct.shopId,
+            productId: removeProduct?.id,
+            shopId: removeProduct?.shopId,
             action: "remove_from_wishlist",
             country: location?.country || "Unknown",
             city: location?.city || "Unknown",

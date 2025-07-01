@@ -1,5 +1,3 @@
-"use client";
-
 import { useAtom } from "jotai";
 import { activeSideBarItem } from "../configs/constants";
 

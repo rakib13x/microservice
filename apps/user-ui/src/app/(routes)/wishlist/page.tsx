@@ -1,12 +1,11 @@
 "use client";
-
 import useDeviceTracking from "apps/user-ui/src/hooks/useDeviceTracking";
 import useLocationTracking from "apps/user-ui/src/hooks/useLocationTracking";
 import useUser from "apps/user-ui/src/hooks/useUser";
 import { useStore } from "apps/user-ui/src/store";
 import Image from "next/image";
 import Link from "next/link";
-
+import React from "react";
 
 const WishlistPage = () => {
   const { user } = useUser();
@@ -16,16 +15,6 @@ const WishlistPage = () => {
   const removeFromWishlist = useStore((state: any) => state.removeFromWishlist);
   const wishlist = useStore((state: any) => state.wishlist);
 
-  // Increase Quantity
-  const increaseQuantity = (id: string) => {
-    useStore.setState((state: any) => ({
-      wishlist: state.wishlist.map((item: any) =>
-        item.id === id ? { ...item, quantity: (item.quantity ?? 1) + 1 } : item
-      ),
-    }));
-  };
-
-  // Decrease Quantity (min 1)
   const decreaseQuantity = (id: string) => {
     useStore.setState((state: any) => ({
       wishlist: state.wishlist.map((item: any) =>
@@ -36,7 +25,14 @@ const WishlistPage = () => {
     }));
   };
 
-  // Remove Item
+  const increaseQuantity = (id: string) => {
+    useStore.setState((state: any) => ({
+      wishlist: state.wishlist.map((item: any) =>
+        item.id === id ? { ...item, quantity: (item.quantity ?? 1) + 1 } : item
+      ),
+    }));
+  };
+
   const removeItem = (id: string) => {
     removeFromWishlist(id, user, location, deviceInfo);
   };
@@ -46,7 +42,7 @@ const WishlistPage = () => {
       <div className="md:w-[80%] w-[95%] mx-auto min-h-screen">
         {/* Breadcrumb */}
         <div className="pb-[50px]">
-          <h1 className="md:pt-[50px] font-[500] text-[44px] leading-[1] mb-[16px] font-jost">
+          <h1 className="md:pt-[50px] font-medium text-[44px] leading-[1] mb-[16px] font-jost">
             Wishlist
           </h1>
           <Link href={"/"} className="text-[#55585b] hover:underline">
@@ -75,14 +71,11 @@ const WishlistPage = () => {
                 </tr>
               </thead>
               <tbody>
-                {wishlist.map((item: any) => (
+                {wishlist?.map((item: any) => (
                   <tr key={item.id} className="border-b border-b-[#0000000e]">
                     <td className="flex items-center gap-3 p-4">
                       <Image
-                        src={
-                          item.images[0]?.url ||
-                          "https://ik.imagekit.io/fz0xzwtey/products/product-1741207782553-0_-RWfpGzfHt.jpg"
-                        }
+                        src={item.images[0]?.url}
                         alt={item.title}
                         width={80}
                         height={80}
@@ -91,25 +84,26 @@ const WishlistPage = () => {
                       <span>{item.title}</span>
                     </td>
                     <td className="px-6 text-lg">
-                      ${item.sale_price.toFixed(2)}
+                      ${item?.sale_price.toFixed(2)}
                     </td>
                     <td>
                       <div className="flex justify-center items-center border border-gray-200 rounded-[20px] w-[90px] p-[2px]">
                         <button
-                          className="text-[#000] cursor-pointer text-xl"
+                          className="text-black cursor-pointer text-xl"
                           onClick={() => decreaseQuantity(item.id)}
                         >
                           -
                         </button>
-                        <span className="px-4">{item.quantity}</span>
+                        <span className="px-4">{item?.quantity}</span>
                         <button
-                          className="text-[#000] cursor-pointer text-xl"
-                          onClick={() => increaseQuantity(item.id)}
+                          className="text-black cursor-pointer text-xl"
+                          onClick={() => increaseQuantity(item?.id)}
                         >
                           +
                         </button>
                       </div>
                     </td>
+
                     <td>
                       <button
                         className="bg-[#2295FF] cursor-pointer text-white px-5 py-2 rounded-md hover:bg-[#007bff] transition-all"
@@ -132,16 +126,6 @@ const WishlistPage = () => {
                 ))}
               </tbody>
             </table>
-
-            {/* Go to Cart Button */}
-            <div className="flex justify-start">
-              <Link
-                href="/cart"
-                className="border border-black px-6 py-3 rounded-md hover:bg-black hover:text-white transition-all"
-              >
-                Go To Cart
-              </Link>
-            </div>
           </div>
         )}
       </div>

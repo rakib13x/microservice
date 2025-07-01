@@ -1,8 +1,6 @@
-"use client";
-
+import axiosInstance from "apps/user-ui/src/utils/axiosInstance";
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
-import axiosInstance from "apps/user-ui/src/utils/axiosInstance";
 
 const ChangePassword = () => {
   const {
@@ -12,7 +10,6 @@ const ChangePassword = () => {
     reset,
     formState: { errors, isSubmitting },
   } = useForm();
-
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
 
@@ -35,7 +32,6 @@ const ChangePassword = () => {
   return (
     <div className="max-w-md mx-auto space-y-6">
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-        {/* Current Password */}
         <div>
           <label className="block mb-1 text-sm font-medium text-gray-700">
             Current Password
@@ -121,8 +117,11 @@ const ChangePassword = () => {
           {isSubmitting ? "Updating..." : "Update Password"}
         </button>
       </form>
+
       {error && <p className="text-red-500 text-center text-sm">{error}</p>}
-      {message && <p className="text-green-500 text-center text-sm">{message}</p>}
+      {message && (
+        <p className="text-green-500 text-center text-sm">{message}</p>
+      )}
     </div>
   );
 };

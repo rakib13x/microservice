@@ -1,9 +1,7 @@
-"use client";
-
+import { PickerProps } from "emoji-picker-react";
+import dynamic from "next/dynamic";
 import React, { useState } from "react";
 import { Send, ImageIcon, Smile } from "lucide-react";
-import type { PickerProps } from "emoji-picker-react";
-import dynamic from "next/dynamic";
 
 const EmojiPicker = dynamic(
   () =>
@@ -78,7 +76,6 @@ const ChatInput = ({
         placeholder="Type your message..."
         className="flex-1 px-4 py-2 text-sm border outline-none border-gray-200 rounded-md"
       />
-
       {/* Send Button */}
       <button
         type="submit"

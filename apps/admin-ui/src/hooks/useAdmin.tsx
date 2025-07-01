@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import axiosInstance from "../shared/utils/axiosInstance";
+import axiosInstance from "../utils/axiosInstance";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 

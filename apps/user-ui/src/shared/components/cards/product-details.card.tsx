@@ -1,14 +1,16 @@
 import Image from "next/image";
+import Link from "next/link";
 import React, { useState } from "react";
 import Ratings from "../ratings";
 import { Heart, MapPin, X } from "lucide-react";
-import { useStore } from "../../../store";
+import { useRouter } from "next/navigation";
+import CartIcon from "apps/user-ui/src/assets/svgs/cart-icon";
+import { useStore } from "apps/user-ui/src/store";
 import useUser from "apps/user-ui/src/hooks/useUser";
 import useLocationTracking from "apps/user-ui/src/hooks/useLocationTracking";
 import useDeviceTracking from "apps/user-ui/src/hooks/useDeviceTracking";
-import CartIcon from "apps/user-ui/src/assets/svgs/cart-icon";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
+import axiosInstance from "apps/user-ui/src/utils/axiosInstance";
+import { isProtected } from "apps/user-ui/src/utils/protected";
 
 const ProductDetailsCard = ({
   data,
@@ -17,6 +19,12 @@ const ProductDetailsCard = ({
   data: any;
   setOpen: (open: boolean) => void;
 }) => {
+  const [activeImage, setActiveImage] = useState(0);
+  const [isSelected, setIsSelected] = useState(data?.colors?.[0] || "");
+  const [isSizeSelected, setIsSizeSelected] = useState(data?.sizes?.[0] || "");
+  const [quantity, setQuantity] = useState(1);
+  const [isLoading, setIsLoading] = useState(false);
+
   const addToCart = useStore((state: any) => state.addToCart);
   const cart = useStore((state: any) => state.cart);
   const isInCart = cart.some((item: any) => item.id === data.id);
@@ -28,15 +36,30 @@ const ProductDetailsCard = ({
   const location = useLocationTracking();
   const deviceInfo = useDeviceTracking();
 
-  const [activeImage, setActiveImage] = useState(0);
-  const [isSelected, setIsSelected] = useState(data?.colors?.[0] || "");
-  const [isSizeSelected, setIsSizeSelected] = useState(data?.sizes?.[0] || "");
-  const [quantity, setQuantity] = useState(1);
+  const estimatedDelivery = new Date();
+  estimatedDelivery.setDate(estimatedDelivery.getDate() + 5);
 
   const router = useRouter();
 
-  const estimatedDelivery = new Date();
-  estimatedDelivery.setDate(estimatedDelivery.getDate() + 5);
+  const handleChat = async () => {
+    if (isLoading) {
+      return;
+    }
+    setIsLoading(true);
+
+    try {
+      const res = await axiosInstance.post(
+        "/chatting/api/create-user-conversationGroup",
+        { sellerId: data?.Shop?.sellerId },
+        isProtected
+      );
+      router.push(`/inbox?conversationId=${res.data.conversation.id}`);
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <div
@@ -48,14 +71,10 @@ const ProductDetailsCard = ({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="w-full flex flex-col md:flex-row">
-          {/* Left Side: Product Images */}
           <div className="w-full md:w-1/2 h-full">
             <Image
-              src={
-                data?.images?.[activeImage]?.url ||
-                "https://ik.imagekit.io/fz0xzwtey/products/product-1741207782553-0_-RWfpGzfHt.jpg"
-              }
-              alt="Product Image"
+              src={data?.images?.[activeImage]?.url}
+              alt={data?.images?.[activeImage].url}
               width={400}
               height={400}
               className="w-full rounded-lg object-contain"
@@ -67,16 +86,13 @@ const ProductDetailsCard = ({
                   key={index}
                   className={`cursor-pointer border rounded-md ${
                     activeImage === index
-                      ? "border-gray-500 p-1"
+                      ? "border-gray-500 pt-1"
                       : "border-transparent"
                   }`}
                   onClick={() => setActiveImage(index)}
                 >
                   <Image
-                    src={
-                      img?.url ||
-                      "https://ik.imagekit.io/fz0xzwtey/products/product-1741207782553-0_-RWfpGzfHt.jpg"
-                    }
+                    src={img?.url}
                     alt={`Thumbnail ${index}`}
                     width={80}
                     height={80}
@@ -87,17 +103,13 @@ const ProductDetailsCard = ({
             </div>
           </div>
 
-          {/* Right Side: Product Details */}
           <div className="w-full md:w-1/2 md:pl-8 mt-6 md:mt-0">
             {/* Seller Info */}
             <div className="border-b relative pb-3 border-gray-200 flex items-center justify-between">
               <div className="flex items-start gap-3">
                 {/* Shop Logo */}
                 <Image
-                  src={
-                    data?.Shop?.avatar ||
-                    "https://ik.imagekit.io/fz0xzwtey/avatar/amazon.jpeg"
-                  }
+                  src={data?.Shop?.avatar}
                   alt="Shop Logo"
                   width={60}
                   height={60}
@@ -128,7 +140,7 @@ const ProductDetailsCard = ({
               {/* Chat with Seller Button */}
               <button
                 className="flex cursor-pointer items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-all duration-200 ease-in-out transform hover:scale-105 hover:shadow-md"
-                onClick={() => router.push(`/inbox?shopId=${data?.Shop?.id}`)}
+                onClick={() => handleChat()}
               >
                 💬 Chat with Seller
               </button>
@@ -137,25 +149,16 @@ const ProductDetailsCard = ({
                 <X size={25} onClick={() => setOpen(false)} />
               </button>
             </div>
-
-            {/* Product Title & Description */}
             <h3 className="text-xl font-semibold mt-3">{data?.title}</h3>
             <p className="mt-2 text-gray-700 whitespace-pre-wrap w-full">
-              {data?.description}{" "}
-              {`Lorem ipsum dolor sit amet consectetur
-adipisicing elit. Nesciunt rerum dolore aspernatur similique
-expedita impedit ducimus quo sunt in vitae. Explicabo cupiditate
-reprehenderit minus iste quaerat fugit dolorem sapiente!...
-                `}
+              {data?.short_description}{" "}
             </p>
-
             {/* Brand */}
             {data?.brand && (
               <p className="mt-2">
                 <strong>Brand:</strong> {data.brand}
               </p>
             )}
-
             {/* Color & Size Selection */}
             <div className="flex flex-col md:flex-row items-start gap-5 mt-4">
               {/* Color Options */}
@@ -178,7 +181,6 @@ reprehenderit minus iste quaerat fugit dolorem sapiente!...
                   </div>
                 </div>
               )}
-
               {/* Size Options */}
               {data?.sizes?.length > 0 && (
                 <div>
@@ -201,7 +203,6 @@ reprehenderit minus iste quaerat fugit dolorem sapiente!...
                 </div>
               )}
             </div>
-
             {/* Price Section */}
             <div className="mt-5 flex items-center gap-4">
               <h3 className="text-2xl font-semibold text-gray-900">
@@ -213,8 +214,6 @@ reprehenderit minus iste quaerat fugit dolorem sapiente!...
                 </h3>
               )}
             </div>
-
-            {/* Quantity,cart & wishlist */}
             <div className="mt-5 flex items-center gap-5">
               <div className="flex items-center rounded-md">
                 <button
@@ -232,9 +231,6 @@ reprehenderit minus iste quaerat fugit dolorem sapiente!...
                 </button>
               </div>
               <button
-                className={`flex items-center gap-2 px-4 py-2 bg-[#ff5722] hover:bg-[#e64a19] text-white font-medium rounded-lg transition ${
-                  isInCart ? "cursor-not-allowed" : "cursor-pointer"
-                }`}
                 disabled={isInCart}
                 onClick={() =>
                   addToCart(
@@ -251,6 +247,9 @@ reprehenderit minus iste quaerat fugit dolorem sapiente!...
                     deviceInfo
                   )
                 }
+                className={`flex items-center gap-2 px-4 py-2 bg-[#ff5722] hover:bg-[#e64a19] text-white font-medium rounded-lg transition ${
+                  isInCart ? "cursor-not-allowed" : "cursor-pointer"
+                }`}
               >
                 <CartIcon size={18} />
                 Add to Cart
@@ -280,15 +279,13 @@ reprehenderit minus iste quaerat fugit dolorem sapiente!...
                 />
               </button>
             </div>
-
             <div className="mt-3">
               {data.stock > 0 ? (
                 <span className="text-green-600 font-semibold">In Stock</span>
               ) : (
                 <span className="text-red-600 font-semibold">Out of Stock</span>
               )}
-            </div>
-
+            </div>{" "}
             <div className="mt-3 text-gray-600 text-sm">
               Estimated Delivery:{" "}
               <strong>{estimatedDelivery.toDateString()}</strong>

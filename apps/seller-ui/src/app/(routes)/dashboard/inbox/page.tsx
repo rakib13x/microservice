@@ -1,67 +1,169 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { CheckCheck } from "lucide-react";
 import Image from "next/image";
 import ChatInput from "apps/seller-ui/src/shared/components/chatinput";
-
-const mockChats = [
-  
-];
+import useSeller from "apps/seller-ui/src/hooks/useSeller";
+import { useWebSocket } from "apps/seller-ui/src/context/web-socket-context";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import axiosInstance from "apps/seller-ui/src/utils/axiosInstance";
 
 const ChatPage = () => {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const messageContainerRef = useRef<HTMLDivElement | null>(null);
+  const { seller, isLoading: userLoading } = useSeller();
+  const conversationId = searchParams.get("conversationId");
+  const queryClient = useQueryClient();
+  const { ws } = useWebSocket();
 
-  const [chats, setChats] = useState<any[]>(mockChats);
+  const [chats, setChats] = useState<any[]>([]);
   const [selectedChat, setSelectedChat] = useState<any | null>(null);
   const [message, setMessage] = useState("");
+  const [hasFetchedOnce, setHasFetchedOnce] = useState(false);
+
+  const { data: messages = [] } = useQuery({
+    queryKey: ["messages", conversationId],
+    queryFn: async () => {
+      if (!conversationId || hasFetchedOnce) return [];
+      const res = await axiosInstance.get(
+        `/chatting/api/get-seller-messages/${conversationId}?page=1`
+      );
+      setHasFetchedOnce(true);
+      return res.data.messages.reverse();
+    },
+    enabled: !!conversationId,
+    staleTime: 2 * 60 * 1000,
+  });
 
   useEffect(() => {
-    const conversationId = searchParams.get("conversationId");
-    const chat = chats.find((c) => c.id === conversationId);
-    setSelectedChat(chat || null);
-  }, [searchParams, chats]);
+    if (!conversationId || messages.length === 0) return;
+    const timeout = setTimeout(scrollToBottom, 100);
+    return () => clearTimeout(timeout);
+  }, [conversationId, messages.length]);
+
+  useEffect(() => {
+    if (conversationId && chats.length > 0) {
+      const chat = chats.find((c) => c.conversationId === conversationId);
+      setSelectedChat(chat || null);
+    }
+  }, [conversationId, chats]);
+
+  const scrollToBottom = () => {
+    requestAnimationFrame(() => {
+      setTimeout(() => {
+        const container = messageContainerRef.current;
+        if (container) {
+          container.scrollTop = container.scrollHeight;
+        }
+      }, 50);
+    });
+  };
+
+  const { data: conversations, isLoading } = useQuery({
+    queryKey: ["conversations"],
+    queryFn: async () => {
+      const res = await axiosInstance.get(
+        "/chatting/api/get-seller-conversations"
+      );
+      return res.data.conversations;
+    },
+  });
+
+  useEffect(() => {
+    if (conversations) setChats(conversations);
+  }, [conversations]);
+
+  useEffect(() => {
+    if (!ws) return;
+
+    ws.onmessage = (event: any) => {
+      const data = JSON.parse(event.data);
+
+      if (data.type === "NEW_MESSAGE") {
+        const newMsg = data?.payload;
+
+        if (newMsg.conversationId === conversationId) {
+          queryClient.setQueryData(
+            ["messages", conversationId],
+            (old: any = []) => [
+              ...old,
+              {
+                content: newMsg.messageBody || newMsg.content || "",
+                senderType: newMsg.senderType,
+                seen: false,
+                createdAt: newMsg.createdAt || new Date().toISOString(),
+              },
+            ]
+          );
+          scrollToBottom();
+        }
+
+        setChats((prevChats) =>
+          prevChats.map((chat) =>
+            chat.conversationId === newMsg.conversationId
+              ? { ...chat, lastMessage: newMsg.content }
+              : chat
+          )
+        );
+      }
+
+      if (data.type === "UNSEEN_COUNT_UPDATE") {
+        const { conversationId, count } = data.payload;
+        setChats((prevChats) =>
+          prevChats.map((chat) =>
+            chat.conversationId === conversationId
+              ? { ...chat, unreadCount: count }
+              : chat
+          )
+        );
+      }
+    };
+  }, [ws, conversationId]);
 
   const handleChatSelect = (chat: any) => {
-    router.push(`?conversationId=${chat.id}`);
+    setHasFetchedOnce(false);
+    setChats((prev) =>
+      prev.map((c) =>
+        c.conversationId === chat.conversationId ? { ...c, unreadCount: 0 } : c
+      )
+    );
+    router.push(`?conversationId=${chat.conversationId}`);
+
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(
+        JSON.stringify({
+          type: "MARK_AS_SEEN",
+          conversationId: chat.conversationId,
+        })
+      );
+    }
   };
 
   const handleSend = (e: any) => {
     e.preventDefault();
-    if (!message.trim()) return;
+    if (
+      !message.trim() ||
+      !selectedChat ||
+      !ws ||
+      ws.readyState !== WebSocket.OPEN
+    )
+      return;
 
-    const newMsg = {
-      from: "seller",
-      text: message,
-      time: new Date().toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit",
-      }),
-      seen: false,
+    const payload = {
+      fromUserId: seller.id,
+      toUserId: selectedChat.user.id,
+      messageBody: message,
+      conversationId: selectedChat.conversationId,
+      senderType: "seller",
     };
 
-    const updated = chats.map((chat) => {
-      if (chat.id === selectedChat.id) {
-        const updatedChat = { ...chat, messages: [...chat.messages, newMsg] };
-        setSelectedChat(updatedChat);
-        return updatedChat;
-      }
-      return chat;
-    });
+    ws.send(JSON.stringify(payload));
 
-    setChats(updated);
     setMessage("");
+    scrollToBottom();
   };
-
-  const getLastMessage = (chat: any) =>
-    chat.messages.length > 0
-      ? chat.messages[chat.messages.length - 1].text
-      : "";
-
-  const getUnseenCount = (chat: any) =>
-    chat.messages.filter((m: any) => !m.seen && m.from !== "seller").length;
 
   return (
     <div className="w-full">
@@ -72,55 +174,61 @@ const ChatPage = () => {
             Messages
           </div>
           <div className="divide-y divide-gray-900">
-            <p className="text-center pt-5">No conversation available yet!</p>
-            {chats.map((chat) => {
-              const unseen = getUnseenCount(chat);
-              const isActive = selectedChat?.id === chat.id;
+            {isLoading ? (
+              <div className="text-center py-5 text-sm">Loading...</div>
+            ) : chats.length === 0 ? (
+              <p className="text-center py-5 text-sm">
+                No conversation available yet!
+              </p>
+            ) : (
+              chats.map((chat) => {
+                const isActive =
+                  selectedChat?.conversationId === chat.conversationId;
 
-              return (
-                <button
-                  key={chat.id}
-                  onClick={() => handleChatSelect(chat)}
-                  className={`w-full text-left px-4 py-3 transition ${
-                    isActive ? "bg-blue-950" : "hover:bg-gray-800"
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <Image
-                      src={chat.avatar}
-                      alt={chat.name}
-                      width={36}
-                      height={36}
-                      className="rounded-full border w-[40px] h-[40px] object-cover"
-                    />
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between">
-                        <span
-                          className={`${
-                            unseen > 0 ? "font-semibold text-white" : ""
-                          } text-sm`}
-                        >
-                          {chat.name}
-                        </span>
-                        {chat.online && (
-                          <span className="w-2 h-2 rounded-full bg-green-500" />
-                        )}
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <p className="text-xs text-gray-400 truncate max-w-[170px]">
-                          {getLastMessage(chat)}
-                        </p>
-                        {unseen > 0 && (
-                          <span className="ml-2 text-[10px] bg-blue-600 text-white rounded-full px-1.5 py-0.5">
-                            {unseen > 9 ? "9+" : unseen}
+                return (
+                  <button
+                    key={chat.conversationId}
+                    onClick={() => handleChatSelect(chat)}
+                    className={`w-full text-left px-4 py-3 transition ${
+                      isActive ? "bg-blue-950" : "hover:bg-gray-800"
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <Image
+                        src={
+                          chat.user?.avatar ||
+                          "https://ik.imagekit.io/shahriarbecodemy/avatar/6_t8b5y8t3U.png"
+                        }
+                        alt={chat.user?.name}
+                        width={36}
+                        height={36}
+                        className="rounded-full border w-[40px] h-[40px] object-cover"
+                      />
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-semibold text-white">
+                            {chat.user?.name}
                           </span>
-                        )}
+                          {chat.user?.isOnline && (
+                            <span className="w-2 h-2 rounded-full bg-green-500" />
+                          )}
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <p className="text-xs text-gray-400 truncate max-w-[170px]">
+                            {chat.lastMessage || ""}{" "}
+                          </p>
+                          {chat?.unreadCount > 0 && (
+                            <span className="ml-2 text-[10px] bg-blue-600 text-white rounded-full px-1.5 py-0.5">
+                              {chat?.unreadCount}
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </button>
-              );
-            })}
+                  </button>
+                );
+              })
+            )}
           </div>
         </div>
 
@@ -131,51 +239,59 @@ const ChatPage = () => {
               {/* Header */}
               <div className="p-4 border-b border-gray-800 bg-gray-900 flex items-center gap-3">
                 <Image
-                  src={selectedChat.avatar}
-                  alt={selectedChat.name}
+                  src={
+                    selectedChat.user?.avatar ||
+                    "https://ik.imagekit.io/shahriarbecodemy/avatar/6_t8b5y8t3U.png"
+                  }
+                  alt={selectedChat.user.name}
                   width={40}
                   height={40}
                   className="rounded-full border w-[40px] h-[40px] object-cover border-gray-700"
                 />
                 <div>
                   <h2 className="text-white font-semibold text-base">
-                    {selectedChat.name}
+                    {selectedChat.user?.name}{" "}
                   </h2>
                   <p className="text-xs text-gray-400">
-                    {selectedChat.online ? "Online" : "Offline"}
+                    {selectedChat.user?.isOnline ? "Online" : "Offline"}
                   </p>
                 </div>
               </div>
 
               {/* Messages */}
-              <div className="flex-1 overflow-y-auto px-6 py-6 space-y-4 text-sm">
-                {selectedChat.messages.map((msg: any, idx: number) => (
+              <div
+                className="flex-1 overflow-y-auto px-6 py-6 space-y-4 text-sm"
+                ref={messageContainerRef}
+              >
+                {messages.map((msg: any, idx: number) => (
                   <div
                     key={idx}
                     className={`flex flex-col ${
-                      msg.from === "seller"
+                      msg.senderType === "seller"
                         ? "items-end ml-auto"
                         : "items-start"
                     } max-w-[80%]`}
                   >
                     <div
                       className={`${
-                        msg.from === "seller"
+                        msg.senderType === "seller"
                           ? "bg-blue-600 text-white"
                           : "bg-gray-800 text-gray-200"
                       } px-4 py-2 rounded-lg shadow-sm w-fit`}
                     >
-                      {msg.text}
+                      {msg.content}
                     </div>
                     <div
                       className={`text-[11px] text-gray-400 mt-1 flex items-center gap-1 ${
-                        msg.from === "seller" ? "mr-1 justify-end" : "ml-1"
+                        msg.senderType === "seller"
+                          ? "mr-1 justify-end"
+                          : "ml-1"
                       }`}
                     >
-                      {msg.time}
-                      {msg.from === "seller" && msg.seen && (
-                        <CheckCheck className="w-3.5 h-3.5 text-blue-400" />
-                      )}
+                      {new Date(msg.createdAt).toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
                     </div>
                   </div>
                 ))}

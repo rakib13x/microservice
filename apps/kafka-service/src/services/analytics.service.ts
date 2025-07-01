@@ -2,15 +2,15 @@ import prisma from "@packages/libs/prisma";
 
 export const updateUserAnalytics = async (event: any) => {
   try {
-    // Fetch existing user analytics
-    const existingData = await prisma.userAnalytics.findUnique({
-      where: { userId: event.userId },
-      select: { actions: true }, // Fetch only the actions array
+    const exisitingData = await prisma.userAnalytics.findUnique({
+      where: {
+        userId: event.userId,
+      },
+      select: { actions: true },
     });
 
-    let updatedActions: any = existingData?.actions || [];
+    let updatedActions: any = exisitingData?.actions || [];
 
-    // Check if the exact `productId` + `action` already exists
     const actionExists = updatedActions.some(
       (entry: any) =>
         entry.productId === event.productId && entry.action === event.action
@@ -19,22 +19,19 @@ export const updateUserAnalytics = async (event: any) => {
     // Always store `product_view` for recommendations
     if (event.action === "product_view") {
       updatedActions.push({
-        productId: event.productId,
+        productId: event?.productId,
         shopId: event.shopId,
-        action: "product_view",
+        action: event.action,
         timestamp: new Date(),
       });
-    }
-
-    // Store `add_to_cart` & `add_to_wishlist` only if they don’t already exist
-    else if (
+    } else if (
       ["add_to_cart", "add_to_wishlist"].includes(event.action) &&
       !actionExists
     ) {
       updatedActions.push({
-        productId: event.productId,
+        productId: event?.productId,
         shopId: event.shopId,
-        action: event.action,
+        action: event?.action,
         timestamp: new Date(),
       });
     }
@@ -61,7 +58,7 @@ export const updateUserAnalytics = async (event: any) => {
       );
     }
 
-    // Keep only the last 100 actions (prevent storage overload)
+    // keep only the last 100 actions (prevent storage overload)
     if (updatedActions.length > 100) {
       updatedActions.shift();
     }
@@ -80,7 +77,7 @@ export const updateUserAnalytics = async (event: any) => {
       extraFields.device = event.device;
     }
 
-    // Update or create user analytics
+    // update or create user analytics
     await prisma.userAnalytics.upsert({
       where: { userId: event.userId },
       update: {
@@ -89,14 +86,14 @@ export const updateUserAnalytics = async (event: any) => {
         ...extraFields,
       },
       create: {
-        userId: event.userId,
+        userId: event?.userId,
         lastVisited: new Date(),
         actions: updatedActions,
         ...extraFields,
       },
     });
 
-    // Also update Product Analytics
+    // Also update product analytics
     await updateProductAnalytics(event);
   } catch (error) {
     console.log("Error storing user analytics:", error);
@@ -111,7 +108,6 @@ export const updateProductAnalytics = async (event: any) => {
     const updateFields: any = {};
 
     if (event.action === "product_view") updateFields.views = { increment: 1 };
-    if (event.action === "click") updateFields.clicks = { increment: 1 };
     if (event.action === "add_to_cart")
       updateFields.cartAdds = { increment: 1 };
     if (event.action === "remove_from_cart")
@@ -122,12 +118,12 @@ export const updateProductAnalytics = async (event: any) => {
       updateFields.wishListAdds = { decrement: 1 };
     if (event.action === "purchase") updateFields.purchases = { increment: 1 };
 
-    // Update or create Product Analytics asynchronously
+    // Update or create Product Analytics
     await prisma.productAnalytics.upsert({
       where: { productId: event.productId },
       update: {
         lastViewedAt: new Date(),
-        ...updateFields, // Apply the correct increment field
+        ...updateFields,
       },
       create: {
         productId: event.productId,

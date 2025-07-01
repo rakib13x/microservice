@@ -1,10 +1,10 @@
 "use client";
-import React, { useState } from "react";
-import Input from "packages/components/input";
-import { useForm } from "react-hook-form";
 import { useMutation } from "@tanstack/react-query";
-import axios, { AxiosError } from "axios";
 import { useRouter } from "next/navigation";
+import Input from "packages/components/input";
+import React, { useState } from "react";
+import { useForm } from "react-hook-form";
+import axios, { AxiosError } from "axios";
 
 type FormData = {
   email: string;
@@ -59,6 +59,7 @@ const Page = () => {
               },
             })}
           />
+
           <div className="mt-3">
             <Input
               label="Password"
@@ -76,7 +77,7 @@ const Page = () => {
             className="w-full mt-5 text-xl flex justify-center font-semibold font-Poppins cursor-pointer bg-blue-600 text-white py-2 rounded-lg"
           >
             {loginMutation.isPending ? (
-              <div className="h-6 w-6 border-2 border-gray-100 border-t-transparent rounded-full animate-spin"></div>
+              <div className="h-6 w-6 border-2 border-gray-100 border-t-transparent rounded-full animate-spin" />
             ) : (
               <>Login</>
             )}

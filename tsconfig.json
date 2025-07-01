@@ -28,22 +28,19 @@
       "path": "./apps/kafka-service"
     },
     {
-      "path": "./apps/logger-service"
-    },
-    {
-      "path": "./apps/admin-ui"
+      "path": "./apps/order-service"
     },
     {
       "path": "./apps/admin-service"
     },
     {
-      "path": "./apps/order-service"
+      "path": "./apps/admin-ui"
     },
     {
       "path": "./apps/chatting-service"
     },
     {
-      "path": "./apps/user-service"
+      "path": "./apps/logger-service"
     },
     {
       "path": "./apps/recommendation-service"

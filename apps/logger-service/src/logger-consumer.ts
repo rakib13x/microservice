@@ -4,26 +4,24 @@ import { clients } from "./main";
 const consumer = kafka.consumer({ groupId: "log-events-group" });
 const logQueue: string[] = [];
 
-// WebSocket processing function for logs
+// websocket processing function for logs
 const processLogs = () => {
   if (logQueue.length === 0) return;
 
-  console.log(`Processing ${logQueue.length} logs in batch...`);
+  console.log(`processing ${logQueue.length} logs in batch`);
   const logs = [...logQueue];
-  logQueue.length = 0; // Clear log queue before processing
+  logQueue.length = 0;
 
-  // Send logs to WebSocket clients
-  clients.forEach((client: any) => {
+  clients.forEach((client) => {
     logs.forEach((log) => {
-      client.send(log); // Send each log to the client
+      client.send(log);
     });
   });
 };
 
-// Run log processing every 3 seconds
 setInterval(processLogs, 3000);
 
-// Consume log messages from Kafka
+// consume log messages from kafka
 export const consumeKafkaMessages = async () => {
   await consumer.connect();
   await consumer.subscribe({ topic: "logs", fromBeginning: false });
@@ -31,12 +29,11 @@ export const consumeKafkaMessages = async () => {
   await consumer.run({
     eachMessage: async ({ message }) => {
       if (!message.value) return;
-      const logMessage = message.value.toString();
-      console.log(`Received log:`, logMessage);
-      logQueue.push(logMessage); // Store logs temporarily for real-time sending via WebSocket
+      const log = message.value.toString();
+      logQueue.push(log);
     },
   });
 };
 
-// Start Kafka consumer
+// start kafka consumer
 consumeKafkaMessages().catch(console.error);

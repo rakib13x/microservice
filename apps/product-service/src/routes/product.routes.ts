@@ -44,4 +44,5 @@ router.get("/get-filtered-offers", getFilteredEvents);
 router.get("/get-filtered-shops", getFilteredShops);
 router.get("/search-products", searchProducts);
 router.get("/top-shops", topShops);
+
 export default router;

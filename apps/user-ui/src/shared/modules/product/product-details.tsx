@@ -1,11 +1,4 @@
 "use client";
-
-import React, { useEffect, useState } from "react";
-import useUser from "../../../hooks/useUser";
-import { sendKafkaEvent } from "../../../actions/track-user";
-import useLocationTracking from "../../../hooks/useLocationTracking";
-import useDeviceTracking from "../../../hooks/useDeviceTracking";
-import ReactImageMagnify from "react-image-magnify";
 import {
   ChevronLeft,
   ChevronRight,
@@ -16,17 +9,28 @@ import {
   WalletMinimal,
 } from "lucide-react";
 import Image from "next/image";
+import React, { useEffect, useState } from "react";
+import ReactImageMagnify from "react-image-magnify";
 import Ratings from "../../components/ratings";
 import Link from "next/link";
 import { useStore } from "apps/user-ui/src/store";
 import CartIcon from "apps/user-ui/src/assets/svgs/cart-icon";
+import useUser from "apps/user-ui/src/hooks/useUser";
+import useLocationTracking from "apps/user-ui/src/hooks/useLocationTracking";
+import useDeviceTracking from "apps/user-ui/src/hooks/useDeviceTracking";
 import ProductCard from "../../components/cards/product-card";
 import axiosInstance from "apps/user-ui/src/utils/axiosInstance";
+import { isProtected } from "apps/user-ui/src/utils/protected";
+import { useRouter } from "next/navigation";
 
 const ProductDetails = ({ productDetails }: { productDetails: any }) => {
   const { user, isLoading } = useUser();
   const location = useLocationTracking();
   const deviceInfo = useDeviceTracking();
+  const router = useRouter();
+
+  const [isChatLoading, setIsChatLoading] = useState(false);
+
   const [currentImage, setCurrentImage] = useState(
     productDetails?.images[0]?.url
   );
@@ -43,6 +47,7 @@ const ProductDetails = ({ productDetails }: { productDetails: any }) => {
     1199,
   ]);
   const [recommendedProducts, setRecommendedProducts] = useState([]);
+
   const addToCart = useStore((state: any) => state.addToCart);
   const cart = useStore((state: any) => state.cart);
   const isInCart = cart.some((item: any) => item.id === productDetails.id);
@@ -69,20 +74,11 @@ const ProductDetails = ({ productDetails }: { productDetails: any }) => {
     }
   };
 
-  useEffect(() => {
-    if (!isLoading) {
-      if (!location || !deviceInfo || !user?.id) return;
-      sendKafkaEvent({
-        userId: user?.id,
-        productId: productDetails.id,
-        shopId: productDetails.shopId,
-        action: "product_view",
-        country: location?.country || "Unknown",
-        city: location?.city || "Unknown",
-        device: deviceInfo || "Unknown Device",
-      });
-    }
-  }, [location, deviceInfo, isLoading]);
+  const discountPercentage = Math.round(
+    ((productDetails.regular_price - productDetails.sale_price) /
+      productDetails.regular_price) *
+      100
+  );
 
   const fetchFilteredProducts = async () => {
     try {
@@ -105,99 +101,116 @@ const ProductDetails = ({ productDetails }: { productDetails: any }) => {
     fetchFilteredProducts();
   }, [priceRange]);
 
+  const handleChat = async () => {
+    if (isChatLoading) {
+      return;
+    }
+    setIsChatLoading(true);
+
+    try {
+      const res = await axiosInstance.post(
+        "/chatting/api/create-user-conversationGroup",
+        { sellerId: productDetails?.Shop?.sellerId },
+        isProtected
+      );
+      router.push(`/inbox?conversationId=${res.data.conversation.id}`);
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setIsChatLoading(false);
+    }
+  };
+
   return (
     <div className="w-full bg-[#f5f5f5] py-5">
       <div className="w-[90%] bg-white lg:w-[80%] mx-auto pt-6 grid grid-cols-1 lg:grid-cols-[28%_44%_28%] gap-6 overflow-hidden">
-        {/* Left Column - Product Images */}
+        {/* left column - product images */}
         <div className="p-4">
           <div className="relative w-full">
-            {/* Main Image with Zoom */}
-            <div className="rounded-lg">
-              <ReactImageMagnify
-                {...{
-                  smallImage: {
-                    alt: "Product Image",
-                    isFluidWidth: true,
-                    src:
-                      currentImage ||
-                      "https://ik.imagekit.io/fz0xzwtey/products/product-1741207782553-0_-RWfpGzfHt.jpg",
-                  },
-                  largeImage: {
-                    src:
-                      currentImage ||
-                      "https://ik.imagekit.io/fz0xzwtey/products/product-1741207782553-0_-RWfpGzfHt.jpg",
-                    width: 1200,
-                    height: 1200,
-                  },
-                  enlargedImageContainerDimensions: {
-                    width: "150%",
-                    height: "150%",
-                  },
-                  enlargedImageStyle: {
-                    border: "none",
-                    boxShadow: "none",
-                  },
-                  enlargedImagePosition: "right",
-                }}
-              />
+            {/* Main Image with zoom */}
+            <ReactImageMagnify
+              {...{
+                smallImage: {
+                  alt: "product Image",
+                  isFluidWidth: true,
+                  src:
+                    currentImage ||
+                    "https://ik.imagekit.io/fz0xzwtey/products/product-1741207782553-0_-RWfpGzfHt.jpg",
+                },
+                largeImage: {
+                  src:
+                    currentImage ||
+                    "https://ik.imagekit.io/fz0xzwtey/products/product-1741207782553-0_-RWfpGzfHt.jpg",
+                  width: 1200,
+                  height: 1200,
+                },
+                enlargedImageContainerDimensions: {
+                  width: "150%",
+                  height: "150%",
+                },
+                enlargedImageStyle: {
+                  border: "none",
+                  boxShadow: "none",
+                },
+                enlargedImagePosition: "right",
+              }}
+            />
+          </div>
+          {/* Thumbnail images array */}
+          <div className="relative flex items-center gap-2 mt04 overflow-hidden">
+            {productDetails?.images?.length > 4 && (
+              <button
+                className="absolute left-0 bg-white p-2 rounded-full shadow-md z-10"
+                onClick={prevImage}
+                disabled={currentIndex === 0}
+              >
+                <ChevronLeft size={24} />
+              </button>
+            )}
+            <div className="flex gap-2 overflow-x-auto">
+              {productDetails?.images?.map((img: any, index: number) => (
+                <Image
+                  key={index}
+                  src={
+                    img?.url ||
+                    "https://ik.imagekit.io/fz0xzwtey/products/product-1741207782553-0_-RWfpGzfHt.jpg"
+                  }
+                  alt="Thumbnail"
+                  width={60}
+                  height={60}
+                  className={`cursor-pointer border rounded-lg p-1 ${
+                    currentImage === img ? "border-blue-500" : "border-gray-300"
+                  }`}
+                  onClick={() => {
+                    setCurrentIndex(index);
+                    setCurrentImage(img);
+                  }}
+                />
+              ))}
             </div>
-            {/* Thumbnail Images with Arrows */}
-            <div className="relative flex items-center gap-2 mt-4 overflow-hidden">
-              {productDetails?.images.length > 4 && (
-                <button
-                  className="absolute left-0 bg-white p-2 rounded-full shadow-md z-10"
-                  onClick={prevImage}
-                  disabled={currentIndex === 0}
-                >
-                  <ChevronLeft size={24} />
-                </button>
-              )}
-              <div className="flex gap-2 overflow-x-auto">
-                {productDetails?.images.map((img: any, index: number) => (
-                  <Image
-                    key={index}
-                    src={
-                      img?.url ||
-                      "https://ik.imagekit.io/fz0xzwtey/products/product-1741207782553-0_-RWfpGzfHt.jpg"
-                    }
-                    alt="Thumbnail"
-                    width={60}
-                    height={60}
-                    className={`cursor-pointer border rounded-lg p-1 ${
-                      currentImage === img
-                        ? "border-blue-500"
-                        : "border-gray-300"
-                    }`}
-                    onClick={() => {
-                      setCurrentIndex(index);
-                      setCurrentImage(img);
-                    }}
-                  />
-                ))}
-              </div>
-              {productDetails?.images.length > 4 && (
-                <button
-                  className="absolute right-0 bg-white p-2 rounded-full shadow-md z-10"
-                  onClick={nextImage}
-                  disabled={currentIndex === productDetails?.images.length - 1}
-                >
-                  <ChevronRight size={24} />
-                </button>
-              )}
-            </div>
+            {productDetails?.images.length > 4 && (
+              <button
+                className="absolute right-0 bg-white p-2 rounded-full shadow-md z-10"
+                onClick={nextImage}
+                disabled={currentIndex === productDetails?.images.length - 1}
+              >
+                <ChevronRight size={24} />
+              </button>
+            )}
           </div>
         </div>
 
-        {/* Middle Column - Product Details */}
+        {/* Middle column - product details */}
         <div className="p-4">
-          <h1 className="text-xl mb-2 font-medium">{productDetails.title}</h1>
+          <h1 className="text-xl mb-2 font-medium">{productDetails?.title}</h1>
           <div className="w-full flex items-center justify-between">
             <div className="flex gap-2 mt-2 text-yellow-500">
-              <Ratings rating={4.5} />{" "}
+              <Ratings rating={productDetails?.rating} />
               <Link href={"#reviews"} className="text-blue-500 hover:underline">
                 (0 Reviews)
               </Link>
             </div>
+
             <div>
               <Heart
                 size={25}
@@ -247,7 +260,7 @@ const ProductDetails = ({ productDetails }: { productDetails: any }) => {
               <span className="text-gray-400 line-through">
                 ${productDetails?.regular_price}
               </span>
-              <span className="text-gray-500">-73%</span>
+              <span className="text-gray-500">-{discountPercentage}%</span>
             </div>
 
             <div className="mt-2">
@@ -257,7 +270,7 @@ const ProductDetails = ({ productDetails }: { productDetails: any }) => {
                   <div>
                     <strong>Color:</strong>
                     <div className="flex gap-2 mt-1">
-                      {productDetails.colors.map(
+                      {productDetails?.colors?.map(
                         (color: string, index: number) => (
                           <button
                             key={index}
@@ -268,7 +281,7 @@ const ProductDetails = ({ productDetails }: { productDetails: any }) => {
                             }`}
                             onClick={() => setIsSelected(color)}
                             style={{ backgroundColor: color }}
-                          ></button>
+                          />
                         )
                       )}
                     </div>
@@ -360,8 +373,8 @@ const ProductDetails = ({ productDetails }: { productDetails: any }) => {
           </div>
         </div>
 
-        {/* Right Column - Seller Information */}
-        <div className="bg-[#FAFAFA] -mt-6">
+        {/* right column - seller information */}
+        <div className="bg-[#fafafa] -mt-6">
           <div className="mb-1 p-3 border-b border-b-gray-100">
             <span className="text-sm text-gray-600">Delivery Option</span>
             <div className="flex items-center text-gray-600 gap-1">
@@ -376,11 +389,11 @@ const ProductDetails = ({ productDetails }: { productDetails: any }) => {
             <span className="text-sm text-gray-600">Return & Warranty</span>
             <div className="flex items-center text-gray-600 gap-1">
               <Package size={18} className="ml-[-5px]" />
-              <span className="text-[16px] font-normal">7 Days Returns</span>
+              <span className="text-base font-normal">7 Days Returns</span>
             </div>
             <div className="flex items-center py-2 text-gray-600 gap-1">
               <WalletMinimal size={18} className="ml-[-5px]" />
-              <span className="text-[16px] font-normal">
+              <span className="text-base font-normal">
                 Warranty not available
               </span>
             </div>
@@ -388,7 +401,7 @@ const ProductDetails = ({ productDetails }: { productDetails: any }) => {
 
           <div className="px-3 py-1">
             <div className="w-[85%] rounded-lg">
-              {/* Sold by Section */}
+              {/* Sold by section */}
               <div className="flex items-center justify-between">
                 <div>
                   <span className="text-sm text-gray-600 font-light">
@@ -399,7 +412,8 @@ const ProductDetails = ({ productDetails }: { productDetails: any }) => {
                   </span>
                 </div>
                 <Link
-                  href="#"
+                  href={"#"}
+                  onClick={() => handleChat()}
                   className="text-blue-500 text-sm flex items-center gap-1"
                 >
                   <MessageSquareText />
@@ -407,7 +421,7 @@ const ProductDetails = ({ productDetails }: { productDetails: any }) => {
                 </Link>
               </div>
 
-              {/* Seller Performance Stats */}
+              {/* Seller perfomance stats */}
               <div className="grid grid-cols-3 gap-2 border-t border-t-gray-200 mt-3 pt-3">
                 <div>
                   <p className="text-[12px] text-gray-500">
@@ -449,7 +463,7 @@ const ProductDetails = ({ productDetails }: { productDetails: any }) => {
           <div
             className="prose prose-sm text-slate-200 max-w-none"
             dangerouslySetInnerHTML={{
-              __html: productDetails?.detailed_description || "",
+              __html: productDetails?.detailed_description,
             }}
           />
         </div>
@@ -460,8 +474,7 @@ const ProductDetails = ({ productDetails }: { productDetails: any }) => {
           <h3 className="text-lg font-semibold">
             Ratings & Reviews of {productDetails?.title}
           </h3>
-
-          <p className="text-center pt-14">No reviews available yet!</p>
+          <p className="text-center pt-14">No Reviews available yet!</p>
         </div>
       </div>
 

@@ -449,7 +449,7 @@ export const getStripeAccount = async (
   }
 };
 
-// get all products
+// get All products
 export const getAllProducts = async (
   req: Request,
   res: Response,
@@ -462,7 +462,14 @@ export const getAllProducts = async (
     const type = req.query.type;
 
     const baseFilter = {
-      OR: [{ starting_date: null }, { ending_date: null }],
+      OR: [
+        {
+          starting_date: null,
+        },
+        {
+          ending_date: null,
+        },
+      ],
     };
 
     const orderBy: Prisma.productsOrderByWithRelationInput =
@@ -483,6 +490,7 @@ export const getAllProducts = async (
           totalSales: "desc",
         },
       }),
+
       prisma.products.count({ where: baseFilter }),
       prisma.products.findMany({
         take: 10,
@@ -500,8 +508,7 @@ export const getAllProducts = async (
       totalPages: Math.ceil(total / limit),
     });
   } catch (error) {
-    console.error("Error fetching products:", error);
-    res.status(500).json({ message: "Failed to fetch products" });
+    next(error);
   }
 };
 
@@ -600,7 +607,6 @@ export const getFilteredProducts = async (
       typeof priceRange === "string"
         ? priceRange.split(",").map(Number)
         : [0, 10000];
-
     const parsedPage = Number(page);
     const parsedLimit = Number(limit);
 

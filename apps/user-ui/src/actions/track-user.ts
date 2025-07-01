@@ -19,7 +19,7 @@ export async function sendKafkaEvent(eventData: {
       messages: [{ value: JSON.stringify(eventData) }],
     });
   } catch (error) {
-    console.error("Error sending Kafka event:", error);
+    console.log(error);
   } finally {
     await producer.disconnect();
   }

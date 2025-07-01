@@ -1,6 +1,6 @@
 import "./global.css";
-import Providers from "./provider";
 import { Poppins } from "next/font/google";
+import Providers from "./provider";
 
 export const metadata = {
   title: "Eshop - Admin",

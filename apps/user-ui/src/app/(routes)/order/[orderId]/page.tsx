@@ -1,9 +1,8 @@
 "use client";
-
-import React, { useEffect, useState } from "react";
 import axiosInstance from "apps/user-ui/src/utils/axiosInstance";
 import { Loader2 } from "lucide-react";
 import { useParams } from "next/navigation";
+import React, { useEffect, useState } from "react";
 
 const Page = () => {
   const params = useParams();
@@ -46,20 +45,41 @@ const Page = () => {
       <h1 className="text-2xl font-bold text-gray-800 mb-4">
         Order #{order.id.slice(-6)}
       </h1>
-
       {/* Delivery Progress Bar */}
       <div className="my-4">
         <div className="flex items-center justify-between text-xs font-medium text-gray-500 mb-2">
-          {["Ordered", "Packed", "Shipped", "Out for Delivery", "Delivered"].map((step, idx) => {
-            const current = step.toLowerCase() === (order.deliveryStatus || "processing").toLowerCase();
-            const passed = idx <= ["Ordered", "Packed", "Shipped", "Out for Delivery", "Delivered"].findIndex(
-              (s) => s.toLowerCase() === (order.deliveryStatus || "processing").toLowerCase()
-            );
+          {[
+            "Ordered",
+            "Packed",
+            "Shipped",
+            "Out for Delivery",
+            "Delivered",
+          ].map((step, idx) => {
+            const current =
+              step.toLowerCase() ===
+              (order.deliveryStatus || "processing").toLowerCase();
+            const passed =
+              idx <=
+              [
+                "Ordered",
+                "Packed",
+                "Shipped",
+                "Out for Delivery",
+                "Delivered",
+              ].findIndex(
+                (s) =>
+                  s.toLowerCase() ===
+                  (order.deliveryStatus || "processing").toLowerCase()
+              );
             return (
               <div
                 key={step}
                 className={`flex-1 text-left ${
-                  current ? "text-blue-600" : passed ? "text-green-600" : "text-gray-400"
+                  current
+                    ? "text-blue-600"
+                    : passed
+                    ? "text-green-600"
+                    : "text-gray-400"
                 }`}
               >
                 {step}
@@ -68,15 +88,39 @@ const Page = () => {
           })}
         </div>
         <div className="flex items-center">
-          {["Ordered", "Packed", "Shipped", "Out for Delivery", "Delivered"].map((step, idx) => {
-            const isReached = idx <= ["Ordered", "Packed", "Shipped", "Out for Delivery", "Delivered"].findIndex(
-              (s) => s.toLowerCase() === (order.deliveryStatus || "processing").toLowerCase()
-            );
+          {[
+            "Ordered",
+            "Packed",
+            "Shipped",
+            "Out for Delivery",
+            "Delivered",
+          ].map((step, idx) => {
+            const isReached =
+              idx <=
+              [
+                "Ordered",
+                "Packed",
+                "Shipped",
+                "Out for Delivery",
+                "Delivered",
+              ].findIndex(
+                (s) =>
+                  s.toLowerCase() ===
+                  (order.deliveryStatus || "processing").toLowerCase()
+              );
             return (
               <div key={step} className="flex-1 flex items-center">
-                <div className={`w-4 h-4 rounded-full ${isReached ? "bg-blue-600" : "bg-gray-300"}`} />
+                <div
+                  className={`w-4 h-4 rounded-full ${
+                    isReached ? "bg-blue-600" : "bg-gray-300"
+                  }`}
+                />
                 {idx !== 4 && (
-                  <div className={`flex-1 h-1 ${isReached ? "bg-blue-500" : "bg-gray-200"}`} />
+                  <div
+                    className={`flex-1 h-1 ${
+                      isReached ? "bg-blue-500" : "bg-gray-200"
+                    }`}
+                  />
                 )}
               </div>
             );
@@ -112,7 +156,9 @@ const Page = () => {
         {order.couponCode && (
           <p>
             <span className="font-semibold">Coupon:</span>{" "}
-            <span className="text-blue-700">{order.couponCode.public_name}</span>
+            <span className="text-blue-700">
+              {order.couponCode.public_name}
+            </span>
           </p>
         )}
 
@@ -137,7 +183,9 @@ const Page = () => {
 
       {/* Order Items */}
       <div>
-        <h2 className="text-lg font-semibold text-gray-700 mb-4">Order Items</h2>
+        <h2 className="text-lg font-semibold text-gray-700 mb-4">
+          Order Items
+        </h2>
         <div className="space-y-4">
           {order.items.map((item: any) => (
             <div
@@ -150,22 +198,38 @@ const Page = () => {
                 className="w-16 h-16 object-cover rounded-md border border-gray-200"
               />
               <div className="flex-1">
-                <p className="font-medium text-gray-800">{item.product?.title || "Unnamed Product"}</p>
-                <p className="text-sm text-gray-600">Quantity: {item.quantity}</p>
-                {item.selectedOptions && Object.keys(item.selectedOptions).length > 0 && (
-                  <div className="text-xs text-gray-500 mt-1">
-                    {Object.entries(item.selectedOptions).map(
-                      ([key, value]: [string, any]) =>
-                        value && (
-                          <span key={key} className="mr-3">
-                            <span className="font-medium capitalize">{key}:</span> {value}
-                          </span>
-                        )
-                    )}
-                  </div>
-                )}
+                <p className="font-medium text-gray-800">
+                  {item.product?.title || "Unnamed Product"}
+                </p>
+                <p className="text-sm text-gray-600">
+                  Quantity: {item.quantity}
+                </p>
+                {item.selectedOptions &&
+                  Object.keys(item.selectedOptions).length > 0 && (
+                    <div className="text-xs text-gray-500 mt-1">
+                      {Object.entries(item.selectedOptions).map(
+                        ([key, value]: [string, any]) =>
+                          value && (
+                            <span
+                              key={key}
+                              className="mr-3 flex gap-2 items-center"
+                            >
+                              <span className="font-medium capitalize">
+                                {key}:
+                              </span>{" "}
+                              <span
+                                className="w-3 h-3 rounded-full block"
+                                style={{ backgroundColor: value }}
+                              ></span>
+                            </span>
+                          )
+                      )}
+                    </div>
+                  )}
               </div>
-              <p className="text-sm font-semibold text-gray-800">${item.price.toFixed(2)}</p>
+              <p className="text-sm font-semibold text-gray-800">
+                ${item.price.toFixed(2)}
+              </p>
             </div>
           ))}
         </div>

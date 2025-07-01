@@ -10,7 +10,7 @@ import {
   updateDeliveryStatus,
   verifyCouponCode,
   verifyingPaymentSession,
-} from "../controller/order.controller";
+} from "../controllers/order.controller";
 import { isAdmin, isSeller } from "@packages/middleware/authorizeRoles";
 
 const router: Router = express.Router();
@@ -22,11 +22,16 @@ router.get(
   isAuthenticated,
   verifyingPaymentSession
 );
-router.get("/get-user-orders", isAuthenticated, getUserOrders);
-router.get("/get-order-details/:id", isAuthenticated, getOrderDetails);
 router.get("/get-seller-orders", isAuthenticated, isSeller, getSellerOrders);
+router.get("/get-order-details/:id", isAuthenticated, getOrderDetails);
+router.put(
+  "/update-status/:orderId",
+  isAuthenticated,
+  isSeller,
+  updateDeliveryStatus
+);
+router.put("/verify-coupon", isAuthenticated, verifyCouponCode);
+router.get("/get-user-orders", isAuthenticated, getUserOrders);
 router.get("/get-admin-orders", isAuthenticated, isAdmin, getAdminOrders);
-router.post("/verify-coupon", isAuthenticated, verifyCouponCode);
-router.put("/update-status/:orderId", isAuthenticated, updateDeliveryStatus);
 
 export default router;

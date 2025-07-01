@@ -8,15 +8,15 @@ import HeartIcon from "../../../assets/svgs/heart-icon";
 import CartIcon from "../../../assets/svgs/cart-icon";
 import HeaderBottom from "./header-bottom";
 import useUser from "apps/user-ui/src/hooks/useUser";
-import { useStore } from "apps/user-ui/src/store";
 import Image from "next/image";
+import { useStore } from "apps/user-ui/src/store";
 import useLayout from "apps/user-ui/src/hooks/useLayout";
 
 const Header = () => {
   const { user, isLoading } = useUser();
-  const { layout } = useLayout();
   const wishlist = useStore((state: any) => state.wishlist);
   const cart = useStore((state: any) => state.cart);
+  const { layout } = useLayout();
 
   const [searchQuery, setSearchQuery] = useState("");
   const [suggestions, setSuggestions] = useState<any[]>([]);
@@ -100,12 +100,14 @@ const Header = () => {
           <div className="flex items-center gap-2">
             {!isLoading && user ? (
               <>
-                <Link
-                  href={"/profile"}
-                  className="border-2 w-[50px] h-[50px] flex items-center justify-center rounded-full border-[#010f1c1a]"
-                >
-                  <ProfileIcon />
-                </Link>
+                <div className="relative">
+                  <Link
+                    href={"/"}
+                    className="border-2 w-[50px] relative h-[50px] flex items-center justify-center rounded-full border-[#010f1c1a]"
+                  >
+                    <ProfileIcon />
+                  </Link>
+                </div>
                 <Link href={"/profile"}>
                   <span className="block font-medium">Hello,</span>
                   <span className="font-semibold">

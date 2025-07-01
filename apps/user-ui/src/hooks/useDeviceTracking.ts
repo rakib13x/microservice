@@ -11,7 +11,9 @@ const useDeviceTracking = () => {
 
     // Set device info only once when component mounts
     setDeviceInfo(
-      `${result.device.type || "Desktop"} - ${result.os.name} ${result.os.version} - ${result.browser.name} ${result.browser.version}`
+      `${result.device.type || "Desktop"} - ${result.os.name} ${
+        result.os.version
+      } - ${result.browser.name} ${result.browser.version}`
     );
   }, []);
 

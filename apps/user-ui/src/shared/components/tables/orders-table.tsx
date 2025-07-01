@@ -67,11 +67,6 @@ const OrdersTable = () => {
 
   return (
     <div className="overflow-x-auto">
-      {data?.length === 0 && (
-        <p className="text-center h-[30vh] items-center flex justify-center">
-          No orders available yet!
-        </p>
-      )}
       <table className="w-full text-sm border-collapse">
         <thead>
           {table.getHeaderGroups().map((headerGroup) => (
@@ -108,6 +103,12 @@ const OrdersTable = () => {
           ))}
         </tbody>
       </table>
+
+      {data?.length === 0 && (
+        <p className="text-center h-[30vh] items-center flex justify-center">
+          No orders available yet!
+        </p>
+      )}
     </div>
   );
 };

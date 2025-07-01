@@ -1,31 +1,26 @@
 import * as tf from "@tensorflow/tfjs-node";
 import { getUserActivity } from "./fetch-user-activity";
-import { preprocessData } from "../utils/preProcessData";
+import { preProcessData } from "../utils/preProcessData";
 
-// Size of the embedding vector (feature dimension)
 const EMBEDDING_DIM = 50;
 
-// User actions that we track for recommendations
 interface UserAction {
   userId: string;
   productId: string;
   actionType: "product_view" | "add_to_cart" | "add_to_wishlist" | "purchase";
 }
 
-// Interaction is a simplified version of UserAction used for training
 interface Interaction {
   userId: string;
   productId: string;
   actionType: UserAction["actionType"];
 }
 
-// Final output after prediction
 interface RecommendedProduct {
   productId: string;
   score: number;
 }
 
-// Fetch and normalize user actions
 async function fetchUserActivity(userId: string): Promise<UserAction[]> {
   const userActions = await getUserActivity(userId);
   return Array.isArray(userActions)
@@ -37,12 +32,10 @@ export const recommendProducts = async (
   userId: string,
   allProducts: any
 ): Promise<string[]> => {
-  // Fetch user behavior history (views, clicks, purchases, etc.)
   const userActions: UserAction[] = await fetchUserActivity(userId);
   if (userActions.length === 0) return [];
 
-  // Format the data to extract interactions relevant to products
-  const processedData = preprocessData(userActions, allProducts);
+  const processedData = preProcessData(userActions, allProducts);
   if (!processedData || !processedData.interactions || !processedData.products)
     return [];
 
@@ -50,7 +43,6 @@ export const recommendProducts = async (
     interactions: Interaction[];
   };
 
-  // Create mapping of user and product IDs to numeric indices for tensor conversion
   const userMap: Record<string, number> = {};
   const productMap: Record<string, number> = {};
   let userCount = 0;
@@ -61,29 +53,37 @@ export const recommendProducts = async (
     if (!(productId in productMap)) productMap[productId] = productCount++;
   });
 
-  // Define model input layers
+  // define model input layers
   const userInput = tf.input({
     shape: [1],
     dtype: "int32",
   }) as tf.SymbolicTensor;
+
   const productInput = tf.input({
     shape: [1],
     dtype: "int32",
   }) as tf.SymbolicTensor;
 
-  // Create embedding layers (like lookup tables) to learn relationships
+  // create embedding layer (like lookup tables) to learn the relationships
   const userEmbedding = tf.layers
-    .embedding({ inputDim: userCount, outputDim: EMBEDDING_DIM })
+    .embedding({
+      inputDim: userCount,
+      outputDim: EMBEDDING_DIM,
+    })
     .apply(userInput) as tf.SymbolicTensor;
 
   const productEmbedding = tf.layers
-    .embedding({ inputDim: productCount, outputDim: EMBEDDING_DIM })
+    .embedding({
+      inputDim: productCount,
+      outputDim: EMBEDDING_DIM,
+    })
     .apply(productInput) as tf.SymbolicTensor;
 
   // Flatten the 2D embeddings into 1D feature vectors
   const userVector = tf.layers
     .flatten()
     .apply(userEmbedding) as tf.SymbolicTensor;
+
   const productVector = tf.layers
     .flatten()
     .apply(productEmbedding) as tf.SymbolicTensor;
@@ -93,12 +93,12 @@ export const recommendProducts = async (
     .dot({ axes: 1 })
     .apply([userVector, productVector]) as tf.SymbolicTensor;
 
-  // Final layer: outputs probability of interaction (e.g., purchase)
+  // Final layer: outputs probability of interaction
   const output = tf.layers
     .dense({ units: 1, activation: "sigmoid" })
     .apply(merged) as tf.SymbolicTensor;
 
-  // Compile the recommendation model
+  // compile the recommendation model
   const model = tf.model({
     inputs: [userInput, productInput],
     outputs: output,
@@ -110,7 +110,7 @@ export const recommendProducts = async (
     metrics: ["accuracy"],
   });
 
-  // Convert user and product interactions into tensors for training
+  // convert user and product  interactions into tensors for training
   const userTensor = tf.tensor1d(
     interactions.map((d) => userMap[d.userId] ?? 0),
     "int32"
@@ -121,18 +121,18 @@ export const recommendProducts = async (
     "int32"
   );
 
-  // Assign different scores based on the action type (purchase > add_to_cart > ...)
-  const weightedLabels = tf.tensor2d(
+  const weightLabels = tf.tensor2d(
     interactions.map((d) => {
       switch (d.actionType) {
         case "purchase":
-          return [1.0]; // most important
+          return [1.0];
         case "add_to_cart":
           return [0.7];
         case "add_to_wishlist":
           return [0.5];
         case "product_view":
-          return [0.1]; // least important
+          return [0.1];
+
         default:
           return [0];
       }
@@ -140,14 +140,13 @@ export const recommendProducts = async (
     [interactions.length, 1]
   );
 
-  // Train the model on user-product interactions
-  await model.fit([userTensor, productTensor], weightedLabels, {
+  await model.fit([userTensor, productTensor], weightLabels, {
     epochs: 5,
     batchSize: 32,
   });
 
-  // Predict scores for all products for the given user
   const productTensorAll = tf.tensor1d(Object.values(productMap), "int32");
+
   const predictions = model.predict([
     tf.tensor1d([userMap[userId] ?? 0], "int32"),
     productTensorAll,
@@ -155,8 +154,8 @@ export const recommendProducts = async (
 
   const scores = (await predictions.array()) as number[];
 
-  // Sort and select top 10 recommended products based on score
-  const recommendedProducts: RecommendedProduct[] = Object.keys(productMap)
+  // sort and select top 10 recommended products based on score
+  const recommendProducts: RecommendedProduct[] = Object.keys(productMap)
     .map((productId, index) => ({
       productId,
       score: scores[index] ?? 0,
@@ -164,6 +163,5 @@ export const recommendProducts = async (
     .sort((a, b) => b.score - a.score)
     .slice(0, 10);
 
-  // Return only the product IDs of top recommended products
-  return recommendedProducts.map((p) => p.productId);
+  return recommendProducts.map((p) => p.productId);
 };

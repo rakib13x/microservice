@@ -1,16 +1,16 @@
 "use client";
-
-import { useEffect, useState } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
-import { Elements } from "@stripe/react-stripe-js";
 import { loadStripe, Appearance } from "@stripe/stripe-js";
+import { Elements } from "@stripe/react-stripe-js";
 import axiosInstance from "apps/user-ui/src/utils/axiosInstance";
-import CheckoutForm from "apps/user-ui/src/shared/components/checkoutForm";
 import { XCircle } from "lucide-react";
+import { useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import CheckoutForm from "apps/user-ui/src/shared/components/checkout/checkoutForm";
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLIC_KEY!);
 
-const PaymentPage = () => {
+const Page = () => {
   const [clientSecret, setClientSecret] = useState("");
   const [cartItems, setCartItems] = useState<any[]>([]);
   const [coupon, setCoupon] = useState();
@@ -47,7 +47,7 @@ const PaymentPage = () => {
 
         setCartItems(cart);
         setCoupon(coupon);
-        const sellerStripeAccountId = sellers[0].stripeAccountId;
+        const sellerStripeAccountId = sellers[0].stripeAccountOd;
 
         const intentRes = await axiosInstance.post(
           "/order/api/create-payment-intent",
@@ -123,4 +123,4 @@ const PaymentPage = () => {
   );
 };
 
-export default PaymentPage;
+export default Page;

@@ -3,7 +3,8 @@
   "version": "0.0.0",
   "license": "MIT",
   "scripts": {
-    "dev": "npx nx run-many --target=serve --all --maxParallel=100",
+    "dev": "npx nx run-many --target=serve --all --maxParallel=10",
+    "postinstall": "patch-package",
     "auth-docs": "node apps/auth-service/src/swagger.js",
     "product-docs": "node apps/product-service/src/swagger.js",
     "user-ui": "npx nx run-many --target=dev --all --projects=user-ui",
@@ -54,13 +55,14 @@
     "react-range": "^1.10.0",
     "react-simple-maps": "^3.0.0",
     "recharts": "^2.15.2",
+    "sonner": "^2.0.5",
     "stripe": "^17.7.0",
     "styled-components": "^6.1.16",
     "swagger-autogen": "^2.23.7",
     "swagger-ui-express": "^5.0.1",
     "tsconfig-paths": "^4.2.0",
     "ua-parser-js": "^2.0.3",
-    "zustand": "^5.0.3"
+    "zustand": "^5.0.4"
   },
   "devDependencies": {
     "@nx/esbuild": "20.6.1",
@@ -104,7 +106,9 @@
     "jest-environment-node": "^29.7.0",
     "npm": "^11.2.0",
     "nx": "20.6.1",
+    "patch-package": "^8.0.0",
     "postcss": "8.4.38",
+    "postinstall-postinstall": "^2.1.0",
     "react-refresh": "^0.10.0",
     "tailwindcss": "3.4.3",
     "ts-jest": "^29.1.0",

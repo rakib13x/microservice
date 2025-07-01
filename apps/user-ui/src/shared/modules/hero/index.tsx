@@ -11,7 +11,7 @@ const Hero = () => {
 
   return (
     <div className="bg-[#115061] h-[85vh] flex flex-col justify-center w-full">
-      <div className="w-[80%] m-auto md:flex h-full items-center">
+      <div className="md:w-[80%] w-[90%] m-auto md:flex h-full items-center">
         <div className="md:w-1/2">
           <p className="font-Roboto font-normal text-white pb-2 text-xl">
             Starting from 40$

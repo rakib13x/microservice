@@ -1,7 +1,7 @@
 "use client";
 
 import { categories } from "apps/user-ui/src/configs/categories";
-import ShopCard from "apps/user-ui/src/shared/components/cards/shop-card";
+import ShopCard from "apps/user-ui/src/shared/components/cards/shop.card";
 import axiosInstance from "apps/user-ui/src/utils/axiosInstance";
 import { countries } from "apps/user-ui/src/utils/countries";
 import Link from "next/link";
@@ -47,7 +47,7 @@ const Page = () => {
       setShops(res.data.shops);
       setTotalPages(res.data.pagination.totalPages);
     } catch (error) {
-      console.error("Failed to fetch filtered shops", error);
+      console.error("Failed to fetch filtered products", error);
     } finally {
       setIsShopLoading(false);
     }
@@ -148,8 +148,8 @@ const Page = () => {
               </div>
             ) : shops.length > 0 ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-5">
-                {shops?.map((i: any) => (
-                  <ShopCard key={i.id} shop={i} />
+                {shops.map((shop) => (
+                  <ShopCard key={shop.id} shop={shop} />
                 ))}
               </div>
             ) : (
