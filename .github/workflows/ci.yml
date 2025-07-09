@@ -25,7 +25,9 @@ jobs:
         run: npm ci --legacy-peer-deps
 
       - name: Run tests
-        run: npx nx affected -t lint test build --base=origin/master
+        run: npx nx affected -t lint test build --base=origin/master --skip-nx-cache
+        env:
+          NX_CLOUD_DISTRIBUTED_EXECUTION: false
 
   build-and-push:
     needs: test
