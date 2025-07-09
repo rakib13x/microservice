@@ -1,73 +1,199 @@
+# Add resource limits to prevent memory issues
 services:
-  backend:
-    image: ${DOCKER_USERNAME}/eshop:latest
+  auth-service:
+    build:
+      context: .
+      dockerfile: apps/auth-service/Dockerfile
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
     ports:
-      - "8080:8080"
       - "6001:6001"
-      - "6002:6002"
-      - "6003:6003"
-      - "6004:6004"
-      - "6005:6005"
-      - "6006:6006"
-      - "6007:6007"
-      - "6008:6008"
-      - "6009:6009"
     environment:
-      # These will be provided at RUNTIME, not build time
-      - DATABASE_URL=${DATABASE_URL}
-      - REDIS_URL=${REDIS_URL}
-      - JWT_SECRET=${JWT_SECRET}
-      - REFRESH_TOKEN_SECRET=${REFRESH_TOKEN_SECRET}
-      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
-      - IMAGEKIT_PUBLIC_KEY=${IMAGEKIT_PUBLIC_KEY}
-      - IMAGEKIT_PRIVATE_KEY=${IMAGEKIT_PRIVATE_KEY}
-      - IMAGEKIT_URL_ENDPOINT=${IMAGEKIT_URL_ENDPOINT}
-      - KAFKA_BROKER_URL=${KAFKA_BROKER_URL}
-      - SMTP_HOST=${SMTP_HOST}
-      - SMTP_PORT=${SMTP_PORT}
-      - SMTP_USER=${SMTP_USER}
-      - SMTP_PASS=${SMTP_PASS}
-    # Use local .env file (gitignored)
+      - DATABASE_URL=${DATABASE_URL} 
+      - REDIS_URL=${REDIS_DATABASE_URI} 
     env_file:
       - .env
-    command: npm run dev
 
+  product-service:
+    build:
+      context: .
+      dockerfile: apps/product-service/Dockerfile
+    ports:
+      - "6002:6002"
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - REDIS_URL=${REDIS_DATABASE_URI}
+      - IMAGEKIT_PUBLIC_KEY=${IMAGEKIT_PUBLIC_KEY}
+      - IMAGEKIT_PRIVATE_KEY=${IMAGEKIT_SECRET_KEY}
+    env_file:
+      - .env
+  
+  order-service:
+    build:
+      context: .
+      dockerfile: apps/order-service/Dockerfile
+    ports:
+      - "6003:6003"
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - REDIS_URL=${REDIS_DATABASE_URI}
+      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
+    env_file:
+      - .env
+
+  seller-service:
+    build:
+      context: .
+      dockerfile: apps/seller-service/Dockerfile
+    ports:
+      - "6004:6004"
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - REDIS_URL=${REDIS_DATABASE_URI}
+      - IMAGEKIT_PUBLIC_KEY=${IMAGEKIT_PUBLIC_KEY}
+      - IMAGEKIT_PRIVATE_KEY=${IMAGEKIT_SECRET_KEY}
+    env_file:
+      - .env
+
+  admin-service:
+    build:
+      context: .
+      dockerfile: apps/admin-service/Dockerfile
+    ports:
+      - "6005:6005"
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - REDIS_URL=${REDIS_DATABASE_URI}
+    env_file:
+      - .env
+  
+  chatting-service:
+    build:
+      context: .
+      dockerfile: apps/chatting-service/Dockerfile
+    ports:
+      - "6006:6006"
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - REDIS_URL=${REDIS_DATABASE_URI}
+    env_file:
+      - .env
+  
+  kafka-service:
+    build:
+      context: .
+      dockerfile: apps/kafka-service/Dockerfile
+    ports:
+      - "6007:6007"
+    environment:
+      - KAFKA_API_KEY=${KAFKA_API_KEY}
+      - KAFKA_API_SECRET=${KAFKA_API_SECRET}
+    env_file:
+      - .env
+
+  logger-service:
+    build:
+      context: .
+      dockerfile: apps/logger-service/Dockerfile
+    ports:
+      - "6008:6008"
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+    env_file:
+      - .env
+
+  recommendation-service:
+    build:
+      context: .
+      dockerfile: apps/recommendation-service/Dockerfile
+    ports:
+      - "6009:6009"
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - REDIS_URL=${REDIS_DATABASE_URI}
+    env_file:
+      - .env
+  
+
+api-gateway:
+  build:
+    context: .
+    dockerfile: apps/api-gateway/Dockerfile
+  ports:
+    - "8080:8080"
+  environment:
+    - AUTH_SERVICE_URL=http://auth-service:6001
+    - PRODUCT_SERVICE_URL=http://product-service:6002
+    - ORDER_SERVICE_URL=http://order-service:6003
+    - SELLER_SERVICE_URL=http://seller-service:6004
+    - ADMIN_SERVICE_URL=http://admin-service:6005
+    - CHATTING_SERVICE_URL=http://chatting-service:6006
+    - RECOMMENDATION_SERVICE_URL=http://recommendation-service:6009
+  env_file:
+    - .env
+  depends_on:
+    - auth-service
+    - product-service
+    - order-service
+    - seller-service
+    - admin-service
+    - chatting-service
+    - recommendation-service
+
+  # UI Services
   user-ui:
-    image: ${DOCKER_USERNAME}/eshop:latest
+    build:
+      context: .
+      dockerfile: apps/user-ui/Dockerfile
     ports:
       - "3000:3000"
     environment:
       - NODE_ENV=development
-      - NEXT_PUBLIC_SERVER_URI=${NEXT_PUBLIC_SERVER_URI:-http://localhost:8080}
-      - NEXT_PUBLIC_SELLER_SERVER_URI=${NEXT_PUBLIC_SELLER_SERVER_URI:-http://localhost:3001}
-      - NEXT_PUBLIC_CHATTING_WEBSOCKET_URI=${NEXT_PUBLIC_CHATTING_WEBSOCKET_URI:-ws://localhost:6006}
+      - NEXT_PUBLIC_SERVER_URI=http://localhost:8080
+      - NEXT_PUBLIC_SELLER_SERVER_URI=http://localhost:3001
+      - NEXT_PUBLIC_CHATTING_WEBSOCKET_URI=ws://localhost:6006
       - NEXT_PUBLIC_STRIPE_PUBLIC_KEY=${NEXT_PUBLIC_STRIPE_PUBLIC_KEY}
     env_file:
-      - apps/user-ui/.env
-    command: npm run user-ui
+      - .env
+    depends_on:
+      - api-gateway
 
   seller-ui:
-    image: ${DOCKER_USERNAME}/eshop:latest
+    build:
+      context: .
+      dockerfile: apps/seller-ui/Dockerfile
     ports:
       - "3001:3001"
     environment:
       - NODE_ENV=development
-      - NEXT_PUBLIC_SERVER_URI=${NEXT_PUBLIC_SERVER_URI:-http://localhost:8080}
-      - NEXT_PUBLIC_USER_UI_LINK=${NEXT_PUBLIC_USER_UI_LINK:-http://localhost:3000}
-      - NEXT_PUBLIC_CHATTING_WEBSOCKET_URI=${NEXT_PUBLIC_CHATTING_WEBSOCKET_URI:-ws://localhost:6006}
+      - NEXT_PUBLIC_SERVER_URI=http://localhost:8080
+      - NEXT_PUBLIC_USER_UI_LINK=http://localhost:3000
+      - NEXT_PUBLIC_CHATTING_WEBSOCKET_URI=ws://localhost:6006
     env_file:
-      - apps/seller-ui/.env
-    command: npm run seller-ui
+      - .env
+    depends_on:
+      - api-gateway
 
   admin-ui:
-    image: ${DOCKER_USERNAME}/eshop:latest
+    build:
+      context: .
+      dockerfile: apps/admin-ui/Dockerfile
     ports:
       - "3002:3002"
     environment:
       - NODE_ENV=development
-      - NEXT_PUBLIC_SERVER_URI=${NEXT_PUBLIC_SERVER_URI:-http://localhost:8080}
-      - NEXT_PUBLIC_USER_UI_LINK=${NEXT_PUBLIC_USER_UI_LINK:-http://localhost:3000}
-      - NEXT_PUBLIC_SOCKET_URI=${NEXT_PUBLIC_SOCKET_URI:-ws://localhost:6008}
+      - NEXT_PUBLIC_SERVER_URI=http://localhost:8080
+      - NEXT_PUBLIC_USER_UI_LINK=http://localhost:3000
+      - NEXT_PUBLIC_SOCKET_URI=ws://localhost:6008
     env_file:
-      - apps/admin-ui/.env
-    command: npm run admin-ui
+      - .env
+    depends_on:
+      - api-gateway
+
+networks:
+  default:
+    name: eshop-network

@@ -1,0 +1,28 @@
+# Build stage
+FROM base AS builder
+ARG SERVICE_NAME
+WORKDIR /app
+
+# Copy service source
+COPY apps/${SERVICE_NAME} ./apps/${SERVICE_NAME}
+
+# Build the service
+RUN npx nx build ${SERVICE_NAME}
+
+# Production stage
+FROM node:23.10.0-alpine AS production
+WORKDIR /app
+
+# Copy built artifacts from base
+COPY --from=base /app/node_modules ./node_modules
+COPY --from=base /app/packages ./packages
+COPY --from=base /app/prisma ./prisma
+
+# Copy built service
+COPY --from=builder /app/dist ./dist
+
+ARG SERVICE_NAME
+ARG PORT
+EXPOSE ${PORT}
+
+CMD ["node", "dist/apps/${SERVICE_NAME}/main.js"]

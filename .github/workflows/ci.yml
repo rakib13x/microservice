@@ -6,6 +6,10 @@ on:
   pull_request:
     branches: [ master ]
 
+env:
+  REGISTRY: docker.io
+  IMAGE_PREFIX: ${{ secrets.DOCKERHUB_USERNAME }}/eshop
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -33,6 +37,22 @@ jobs:
     needs: test
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/master'
+    strategy:
+      matrix:
+        service:
+          - api-gateway
+          - auth-service
+          - product-service
+          - order-service
+          - seller-service
+          - admin-service
+          - chatting-service
+          - kafka-service
+          - logger-service
+          - recommendation-service
+          - user-ui
+          - seller-ui
+          - admin-ui
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -56,7 +76,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ secrets.DOCKERHUB_USERNAME }}/eshop
+          images: ${{ env.IMAGE_PREFIX }}-${{ matrix.service }}
           tags: |
             type=ref,event=branch
             type=ref,event=pr
@@ -66,14 +86,57 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      # Build CLEAN image with NO secrets
-      - name: Build and push Docker image
+      - name: Build and push ${{ matrix.service }} image
         uses: docker/build-push-action@v5
         with:
           context: .
+          file: ./apps/${{ matrix.service }}/Dockerfile
           platforms: linux/amd64,linux/arm64
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=gha,scope=${{ matrix.service }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.service }}
+
+  docker-compose-test:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Create .env file for testing
+        run: |
+          cp .env.example .env
+          echo "NODE_ENV=test" >> .env
+
+      - name: Test Docker Compose build
+        run: |
+          docker-compose config
+          docker-compose build --parallel
+
+      - name: Test production Docker Compose
+        run: |
+          docker-compose -f docker-compose.prod.yml config
+
+  security-scan:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/master'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+
+      - name: Upload Trivy scan results
+        uses: github/codeql-action/upload-sarif@v2
+        if: always()
+        with:
+          sarif_file: 'trivy-results.sarif'

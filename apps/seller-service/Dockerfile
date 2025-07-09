@@ -1,7 +1,7 @@
 FROM base AS builder
 WORKDIR /app
-COPY apps/auth-service ./apps/auth-service
-RUN npx nx build auth-service
+COPY apps/seller-service ./apps/seller-service
+RUN npx nx build seller-service
 
 FROM node:23.10.0-alpine AS production
 WORKDIR /app
@@ -10,5 +10,5 @@ COPY --from=base /app/packages ./packages
 COPY --from=base /app/prisma ./prisma
 COPY --from=builder /app/dist ./dist
 
-EXPOSE 6001
-CMD ["node", "dist/apps/auth-service/main.js"]
+EXPOSE 6004
+CMD ["node", "dist/apps/seller-service/main.js"]
