@@ -390,19 +390,3 @@ docker-compose build --no-cache
 If you need help with this project, please contact us through the official channel or our [Becodemy App](https://play.google.com/store/apps/details?id=com.becodemyofficial.app&pli=1).
 
 > 🔒 Licensed to individual buyer only. All rights reserved © Becodemy Private Ltd.
-
-```
-
-This updated README now provides:
-
-1. **Docker-first approach** with clear setup instructions
-2. **Port mapping table** for easy reference
-3. **Multiple deployment options** (all services, specific services, development mode)
-4. **Useful Docker commands** for daily development
-5. **Architecture overview** explaining the microservices setup
-6. **Production deployment** guidance
-7. **Troubleshooting section** for common issues
-8. **Preserved all existing content** while enhancing it with Docker instructions
-
-The README now serves as a comprehensive guide for both Docker and traditional development setups!
-```
