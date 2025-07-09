@@ -56,7 +56,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ secrets.DOCKER_USERNAME }}/eshop
+          images: ${{ secrets.DOCKERHUB_USERNAME }}/eshop
           tags: |
             type=ref,event=branch
             type=ref,event=pr
