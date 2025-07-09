@@ -1,13 +1,42 @@
-FROM base AS builder
+# Dependencies stage
+FROM node:23.10.0-alpine AS deps
 WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+COPY nx.json tsconfig.base.json ./
+COPY apps/admin-ui/package.json ./apps/admin-ui/
+
+# Install dependencies
+RUN npm ci --legacy-peer-deps
+
+# Builder stage
+FROM node:23.10.0-alpine AS builder
+WORKDIR /app
+
+# Copy dependencies
+COPY --from=deps /app/node_modules ./node_modules
+COPY --from=deps /app/package*.json ./
+COPY --from=deps /app/nx.json ./
+COPY --from=deps /app/tsconfig.base.json ./
+
+# Copy source code
 COPY apps/admin-ui ./apps/admin-ui
+COPY packages ./packages
+
+# Build the application
 RUN npx nx build admin-ui
 
+# Production stage
 FROM node:23.10.0-alpine AS production
 WORKDIR /app
-RUN npm install next@15.1.4 react@19.0.0 react-dom@19.0.0 --only=production
-COPY --from=builder /app/dist/apps/admin-ui ./
-COPY --from=base /app/packages ./packages
 
+# Install only production dependencies for Next.js
+RUN npm install next@15.1.4 react@19.0.0 react-dom@19.0.0 --only=production
+
+# Copy built application
+COPY --from=builder /app/dist/apps/admin-ui ./
+
+# Expose port and start
 EXPOSE 3002
 CMD ["npm", "start"]

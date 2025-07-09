@@ -119,7 +119,7 @@ services:
       - .env
   
 
-api-gateway:
+api-gateway:  # ✅ Properly indented
   build:
     context: .
     dockerfile: apps/api-gateway/Dockerfile
@@ -145,7 +145,7 @@ api-gateway:
     - recommendation-service
 
   # UI Services
-  user-ui:
+  user-ui:  # ✅ Properly indented
     build:
       context: .
       dockerfile: apps/user-ui/Dockerfile
