@@ -1,0 +1,77 @@
+services:
+  # Main application - Backend services
+  backend:
+    image: becodemy/eshop:latest  # Use image instead of build
+    container_name: eshop-backend
+    restart: unless-stopped
+    ports:
+      - "6001:6001"  # auth-service
+      - "6002:6002"  # product-service
+      - "6003:6003"  # seller-service
+      - "6004:6004"  # order-service
+      - "6005:6005"  # admin-service
+      - "6006:6006"  # chatting-service
+      - "6007:6007"  # recommendation-service
+      - "8080:8080"  # api-gateway
+    environment:
+      - NODE_ENV=development
+    env_file:
+      - .env
+    volumes:
+      - .:/app
+      - /app/node_modules
+    command: npm run dev
+
+  # User UI
+  user-ui:
+    image: becodemy/eshop:latest  # Use image instead of build
+    container_name: eshop-user-ui
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+    env_file:
+      - apps/user-ui/.env
+    depends_on:
+      - backend
+    volumes:
+      - .:/app
+      - /app/node_modules
+    command: npm run user-ui
+
+  # Seller UI
+  seller-ui:
+    image: becodemy/eshop:latest  # Use image instead of build
+    container_name: eshop-seller-ui
+    restart: unless-stopped
+    ports:
+      - "3001:3000"
+    environment:
+      - NODE_ENV=development
+    env_file:
+      - apps/seller-ui/.env
+    depends_on:
+      - backend
+    volumes:
+      - .:/app
+      - /app/node_modules
+    command: npm run seller-ui
+
+  # Admin UI
+  admin-ui:
+    image: becodemy/eshop:latest  # Use image instead of build
+    container_name: eshop-admin-ui
+    restart: unless-stopped
+    ports:
+      - "3002:3000"
+    environment:
+      - NODE_ENV=development
+    env_file:
+      - apps/admin-ui/.env
+    depends_on:
+      - backend
+    volumes:
+      - .:/app
+      - /app/node_modules
+    command: npm run admin-ui

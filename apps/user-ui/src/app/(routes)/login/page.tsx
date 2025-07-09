@@ -2,6 +2,7 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import GoogleButton from "apps/user-ui/src/shared/components/google-button";
+import { useAuthStore } from "apps/user-ui/src/store/authStore";
 import axios, { AxiosError } from "axios";
 import { Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
@@ -16,6 +17,7 @@ type FormData = {
 
 const Login = () => {
   const queryClient = useQueryClient();
+  const { setLoggedIn } = useAuthStore();
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
   const [rememberMe, setRememberMe] = useState(false);
@@ -38,6 +40,7 @@ const Login = () => {
     },
     onSuccess: (data) => {
       setServerError(null);
+      setLoggedIn(true);
       queryClient.invalidateQueries({ queryKey: ["user"] });
       router.push("/");
     },
