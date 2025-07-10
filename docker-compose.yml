@@ -3,7 +3,10 @@ services:
   auth-service:
     build:
       context: .
-      dockerfile: apps/auth-service/Dockerfile
+      dockerfile: docker/backend-service.template
+      args:
+        SERVICE_NAME: auth-service
+        PORT: 6001
     deploy:
       resources:
         limits:
@@ -13,15 +16,18 @@ services:
     ports:
       - "6001:6001"
     environment:
-      - DATABASE_URL=${DATABASE_URL} 
-      - REDIS_URL=${REDIS_DATABASE_URI} 
+      - DATABASE_URL=${DATABASE_URL}
+      - REDIS_URL=${REDIS_DATABASE_URI}
     env_file:
       - .env
 
   product-service:
     build:
       context: .
-      dockerfile: apps/product-service/Dockerfile
+      dockerfile: docker/backend-service.template
+      args:
+        SERVICE_NAME: product-service
+        PORT: 6002
     ports:
       - "6002:6002"
     environment:
@@ -31,11 +37,14 @@ services:
       - IMAGEKIT_PRIVATE_KEY=${IMAGEKIT_SECRET_KEY}
     env_file:
       - .env
-  
+
   order-service:
     build:
       context: .
-      dockerfile: apps/order-service/Dockerfile
+      dockerfile: docker/backend-service.template
+      args:
+        SERVICE_NAME: order-service
+        PORT: 6003
     ports:
       - "6003:6003"
     environment:
@@ -48,7 +57,10 @@ services:
   seller-service:
     build:
       context: .
-      dockerfile: apps/seller-service/Dockerfile
+      dockerfile: docker/backend-service.template
+      args:
+        SERVICE_NAME: seller-service
+        PORT: 6004
     ports:
       - "6004:6004"
     environment:
@@ -62,7 +74,10 @@ services:
   admin-service:
     build:
       context: .
-      dockerfile: apps/admin-service/Dockerfile
+      dockerfile: docker/backend-service.template
+      args:
+        SERVICE_NAME: admin-service
+        PORT: 6005
     ports:
       - "6005:6005"
     environment:
@@ -70,11 +85,14 @@ services:
       - REDIS_URL=${REDIS_DATABASE_URI}
     env_file:
       - .env
-  
+
   chatting-service:
     build:
       context: .
-      dockerfile: apps/chatting-service/Dockerfile
+      dockerfile: docker/backend-service.template
+      args:
+        SERVICE_NAME: chatting-service
+        PORT: 6006
     ports:
       - "6006:6006"
     environment:
@@ -82,11 +100,14 @@ services:
       - REDIS_URL=${REDIS_DATABASE_URI}
     env_file:
       - .env
-  
+
   kafka-service:
     build:
       context: .
-      dockerfile: apps/kafka-service/Dockerfile
+      dockerfile: docker/backend-service.template
+      args:
+        SERVICE_NAME: kafka-service
+        PORT: 6007
     ports:
       - "6007:6007"
     environment:
@@ -98,7 +119,10 @@ services:
   logger-service:
     build:
       context: .
-      dockerfile: apps/logger-service/Dockerfile
+      dockerfile: docker/backend-service.template
+      args:
+        SERVICE_NAME: logger-service
+        PORT: 6008
     ports:
       - "6008:6008"
     environment:
@@ -109,7 +133,10 @@ services:
   recommendation-service:
     build:
       context: .
-      dockerfile: apps/recommendation-service/Dockerfile
+      dockerfile: docker/backend-service.template
+      args:
+        SERVICE_NAME: recommendation-service
+        PORT: 6009
     ports:
       - "6009:6009"
     environment:
@@ -117,37 +144,42 @@ services:
       - REDIS_URL=${REDIS_DATABASE_URI}
     env_file:
       - .env
-  
-  api-gateway:  # ✅ Properly indented
-  build:
-    context: .
-    dockerfile: apps/api-gateway/Dockerfile
-  ports:
-    - "8080:8080"
-  environment:
-    - AUTH_SERVICE_URL=http://auth-service:6001
-    - PRODUCT_SERVICE_URL=http://product-service:6002
-    - ORDER_SERVICE_URL=http://order-service:6003
-    - SELLER_SERVICE_URL=http://seller-service:6004
-    - ADMIN_SERVICE_URL=http://admin-service:6005
-    - CHATTING_SERVICE_URL=http://chatting-service:6006
-    - RECOMMENDATION_SERVICE_URL=http://recommendation-service:6009
-  env_file:
-    - .env
-  depends_on:
-    - auth-service
-    - product-service
-    - order-service
-    - seller-service
-    - admin-service
-    - chatting-service
-    - recommendation-service
 
-  # UI Services (also need proper indentation)
+  api-gateway:
+    build:
+      context: .
+      dockerfile: docker/backend-service.template
+      args:
+        SERVICE_NAME: api-gateway
+        PORT: 8080
+    ports:
+      - "8080:8080"
+    environment:
+      - AUTH_SERVICE_URL=http://auth-service:6001
+      - PRODUCT_SERVICE_URL=http://product-service:6002
+      - ORDER_SERVICE_URL=http://order-service:6003
+      - SELLER_SERVICE_URL=http://seller-service:6004
+      - ADMIN_SERVICE_URL=http://admin-service:6005
+      - CHATTING_SERVICE_URL=http://chatting-service:6006
+      - RECOMMENDATION_SERVICE_URL=http://recommendation-service:6009
+    env_file:
+      - .env
+    depends_on:
+      - auth-service
+      - product-service
+      - order-service
+      - seller-service
+      - admin-service
+      - chatting-service
+      - recommendation-service
+
   user-ui:
     build:
       context: .
-      dockerfile: apps/user-ui/Dockerfile
+      dockerfile: docker/ui-service.template
+      args:
+        SERVICE_NAME: user-ui
+        PORT: 3000
     ports:
       - "3000:3000"
     environment:
@@ -164,7 +196,10 @@ services:
   seller-ui:
     build:
       context: .
-      dockerfile: apps/seller-ui/Dockerfile
+      dockerfile: docker/ui-service.template
+      args:
+        SERVICE_NAME: seller-ui
+        PORT: 3001
     ports:
       - "3001:3001"
     environment:
@@ -180,7 +215,10 @@ services:
   admin-ui:
     build:
       context: .
-      dockerfile: apps/admin-ui/Dockerfile
+      dockerfile: docker/ui-service.template
+      args:
+        SERVICE_NAME: admin-ui
+        PORT: 3002
     ports:
       - "3002:3002"
     environment:

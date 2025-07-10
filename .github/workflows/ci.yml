@@ -6,6 +6,11 @@ on:
   pull_request:
     branches: [ master ]
 
+permissions:
+    contents: read
+    security-events: write
+    actions: read
+
 env:
   REGISTRY: docker.io
   IMAGE_PREFIX: ${{ secrets.DOCKERHUB_USERNAME }}/eshop
@@ -39,20 +44,48 @@ jobs:
     if: github.ref == 'refs/heads/master'
     strategy:
       matrix:
-        service:
-          - api-gateway
-          - auth-service
-          - product-service
-          - order-service
-          - seller-service
-          - admin-service
-          - chatting-service
-          - kafka-service
-          - logger-service
-          - recommendation-service
-          - user-ui
-          - seller-ui
-          - admin-ui
+        include:
+          # Backend services
+          - service: api-gateway
+            dockerfile: docker/backend-service.template
+            port: 8080
+          - service: auth-service
+            dockerfile: docker/backend-service.template
+            port: 6001
+          - service: product-service
+            dockerfile: docker/backend-service.template
+            port: 6002
+          - service: order-service
+            dockerfile: docker/backend-service.template
+            port: 6003
+          - service: seller-service
+            dockerfile: docker/backend-service.template
+            port: 6004
+          - service: admin-service
+            dockerfile: docker/backend-service.template
+            port: 6005
+          - service: chatting-service
+            dockerfile: docker/backend-service.template
+            port: 6006
+          - service: kafka-service
+            dockerfile: docker/backend-service.template
+            port: 6007
+          - service: logger-service
+            dockerfile: docker/backend-service.template
+            port: 6008
+          - service: recommendation-service
+            dockerfile: docker/backend-service.template
+            port: 6009
+          # UI services
+          - service: user-ui
+            dockerfile: docker/ui-service.template
+            port: 3000
+          - service: seller-ui
+            dockerfile: docker/ui-service.template
+            port: 3001
+          - service: admin-ui
+            dockerfile: docker/ui-service.template
+            port: 3002
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -90,7 +123,10 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: ./apps/${{ matrix.service }}/Dockerfile
+          file: ${{ matrix.dockerfile }}
+          build-args: |
+            SERVICE_NAME=${{ matrix.service }}
+            PORT=${{ matrix.port }}
           platforms: linux/amd64,linux/arm64
           push: true
           tags: ${{ steps.meta.outputs.tags }}
@@ -137,7 +173,7 @@ jobs:
           output: 'trivy-results.sarif'
 
       - name: Upload Trivy scan results
-        uses: github/codeql-action/upload-sarif@v3  # ✅ Updated to v3
+        uses: github/codeql-action/upload-sarif@v3
         if: always()
         with:
           sarif_file: 'trivy-results.sarif'
