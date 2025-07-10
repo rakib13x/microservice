@@ -50,8 +50,8 @@ COPY --from=base /app/node_modules ./node_modules
 COPY --from=base /app/packages ./packages
 COPY --from=base /app/prisma ./prisma
 
-# Copy built service from the correct NX output location
-COPY --from=builder /app/dist/apps/${SERVICE_NAME} ./dist
+# Copy built service from the correct location (apps/SERVICE_NAME/dist/)
+COPY --from=builder /app/apps/${SERVICE_NAME}/dist ./dist
 
 EXPOSE ${PORT}
 
