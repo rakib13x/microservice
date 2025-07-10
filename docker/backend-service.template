@@ -44,11 +44,11 @@ COPY --from=base /app/node_modules ./node_modules
 COPY --from=base /app/packages ./packages
 COPY --from=base /app/prisma ./prisma
 
-# Copy built service
-COPY --from=builder /app/dist ./dist
+# Copy built service (CORRECTED: Copy from the actual build output location)
+COPY --from=builder /app/${SERVICE_NAME}/dist ./dist
 
 ARG SERVICE_NAME
 ARG PORT
 EXPOSE ${PORT}
 
-CMD ["node", "dist/apps/${SERVICE_NAME}/main.js"]
+CMD ["node", "dist/main.js"]
