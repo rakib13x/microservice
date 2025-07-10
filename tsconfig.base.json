@@ -7,7 +7,9 @@
     "isolatedModules": true,
     "baseUrl": ".",
     "lib": [
-      "es2022"
+      "es2022",
+      "dom",
+      "dom.iterable"
     ],
     "module": "nodenext",
     "moduleResolution": "nodenext",
@@ -19,6 +21,9 @@
     "skipLibCheck": true,
     "strict": true,
     "target": "es2022",
+    "jsx": "react-jsx",
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
     "paths": {
       "@packages/*": [
         "packages/*"

@@ -5,8 +5,10 @@
       "rootDir": ".",
       "composite": true,
       "declaration": true,
-      "declarationMap": true
+      "declarationMap": true,
+      "jsx": "react-jsx",
+      "lib": ["dom", "dom.iterable", "es6"]
     },
-    "include": ["**/*.ts"]
-  }
+    "include": ["**/*.ts", "**/*.tsx"]
+}
   
