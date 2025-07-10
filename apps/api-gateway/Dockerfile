@@ -27,12 +27,12 @@ COPY nx.json tsconfig.base.json ./
 RUN npm ci --legacy-peer-deps
 
 # Copy source code
-COPY apps/SERVICE_NAME ./apps/SERVICE_NAME
+COPY apps/api-gateway ./apps/api-gateway
 COPY packages ./packages
 COPY prisma ./prisma
 
 # Build the service
-RUN npx nx build SERVICE_NAME
+RUN npx nx build api-gateway
 
 # Production stage
 FROM node:23.10.0-alpine AS production
@@ -48,4 +48,4 @@ COPY --from=builder /app/dist ./dist
 
 # Expose port and start
 EXPOSE 8080
-CMD ["node", "dist/apps/SERVICE_NAME/main.js"]
+CMD ["node", "dist/apps/api-gateway/main.js"]

@@ -27,12 +27,12 @@ COPY nx.json tsconfig.base.json ./
 RUN npm ci --legacy-peer-deps
 
 # Copy source code
-COPY apps/SERVICE_NAME ./apps/SERVICE_NAME
+COPY apps/chatting-service ./apps/chatting-service
 COPY packages ./packages
 COPY prisma ./prisma
 
 # Build the service
-RUN npx nx build SERVICE_NAME
+RUN npx nx build chatting-service
 
 # Production stage
 FROM node:23.10.0-alpine AS production
@@ -48,4 +48,4 @@ COPY --from=builder /app/dist ./dist
 
 # Expose port and start
 EXPOSE 6006
-CMD ["node", "dist/apps/SERVICE_NAME/main.js"]
+CMD ["node", "dist/apps/chatting-service/main.js"]

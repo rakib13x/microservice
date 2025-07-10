@@ -27,25 +27,21 @@ COPY nx.json tsconfig.base.json ./
 RUN npm ci --legacy-peer-deps
 
 # Copy source code
-COPY apps/SERVICE_NAME ./apps/SERVICE_NAME
+COPY apps/kafka-service ./apps/kafka-service
 COPY packages ./packages
 COPY prisma ./prisma
 
-# Build the service
-RUN npx nx build SERVICE_NAME
+# Build the application
+RUN npx nx build kafka-service --prod
 
 # Production stage
 FROM node:23.10.0-alpine AS production
 WORKDIR /app
 
-# Copy from base stage
-COPY --from=base /app/node_modules ./node_modules
-COPY --from=base /app/packages ./packages
-COPY --from=base /app/prisma ./prisma
-
 # Copy built application
-COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/dist/apps/kafka-service ./
+COPY --from=base /app/node_modules ./node_modules
 
 # Expose port and start
 EXPOSE 6007
-CMD ["node", "dist/apps/SERVICE_NAME/main.js"]
+CMD ["node", "main.js"]

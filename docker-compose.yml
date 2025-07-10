@@ -118,8 +118,7 @@ services:
     env_file:
       - .env
   
-
-api-gateway:  # ✅ Properly indented
+  api-gateway:  # ✅ Properly indented
   build:
     context: .
     dockerfile: apps/api-gateway/Dockerfile
@@ -144,8 +143,8 @@ api-gateway:  # ✅ Properly indented
     - chatting-service
     - recommendation-service
 
-  # UI Services
-  user-ui:  # ✅ Properly indented
+  # UI Services (also need proper indentation)
+  user-ui:
     build:
       context: .
       dockerfile: apps/user-ui/Dockerfile
