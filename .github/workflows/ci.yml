@@ -112,12 +112,12 @@ jobs:
 
       - name: Test Docker Compose build
         run: |
-          docker-compose config
-          docker-compose build --parallel
+          docker compose config
+          docker compose build --parallel
 
       - name: Test production Docker Compose
         run: |
-          docker-compose -f docker-compose.prod.yml config
+          docker compose -f docker-compose.prod.yml config
 
   security-scan:
     needs: test
