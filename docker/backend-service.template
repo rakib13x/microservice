@@ -29,13 +29,17 @@ RUN npm ci --legacy-peer-deps
 # Declare ARG before using it
 ARG SERVICE_NAME
 
-# Copy service source
-COPY apps/${SERVICE_NAME} ./apps/${SERVICE_NAME}
+# Copy ALL source files (not just the specific service)
+COPY apps ./apps
 COPY packages ./packages
 COPY prisma ./prisma
+COPY tsconfig.base.json ./
 
-# Build the service
-RUN npx nx build ${SERVICE_NAME}
+# Generate Prisma client in builder stage
+RUN npx prisma generate
+
+# Build the service with verbose output
+RUN npx nx build ${SERVICE_NAME} --verbose
 
 # Production stage
 FROM node:23.10.0-alpine AS production
@@ -50,7 +54,7 @@ COPY --from=base /app/node_modules ./node_modules
 COPY --from=base /app/packages ./packages
 COPY --from=base /app/prisma ./prisma
 
-# Copy built service from the correct location (apps/SERVICE_NAME/dist/)
+# Copy built service from the correct location
 COPY --from=builder /app/apps/${SERVICE_NAME}/dist ./dist
 
 EXPOSE ${PORT}

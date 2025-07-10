@@ -44,12 +44,12 @@ export const getRecommendedProducts = async (
       if (actions.length < 50) {
         recommendedProducts = products.slice(-10);
       } else if (hoursDiff < 3 && recommendations.length > 0) {
-        recommendedProducts = products.filter((product) =>
+        recommendedProducts = products.filter((product:any) =>
           recommendations.includes(product.id)
         );
       } else {
         const recommendedProductIds = await recommendProducts(userId, products);
-        recommendedProducts = products.filter((product) =>
+        recommendedProducts = products.filter((product:any) =>
           recommendedProductIds.includes(product.id)
         );
 
