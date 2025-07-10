@@ -24,7 +24,7 @@ import { isProtected } from "apps/user-ui/src/utils/protected";
 import { useRouter } from "next/navigation";
 
 const ProductDetails = ({ productDetails }: { productDetails: any }) => {
-  const { user } = useUser();
+  const { user, isLoading } = useUser();
   const location = useLocationTracking();
   const deviceInfo = useDeviceTracking();
   const router = useRouter();

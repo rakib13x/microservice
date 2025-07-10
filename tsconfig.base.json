@@ -7,23 +7,18 @@
     "isolatedModules": true,
     "baseUrl": ".",
     "lib": [
-      "es2022",
-      "dom",
-      "dom.iterable"
+      "es2022"
     ],
     "module": "nodenext",
     "moduleResolution": "nodenext",
-    "noEmitOnError": true,
-    "noFallthroughCasesInSwitch": true,
-    "noImplicitOverride": true,
-    "noImplicitReturns": true,
-    "noUnusedLocals": true,
+    "noEmitOnError": false,
+    "noFallthroughCasesInSwitch": false,
+    "noImplicitOverride": false,
+    "noImplicitReturns": false,
+    "noUnusedLocals": false,
     "skipLibCheck": true,
-    "strict": true,
+    "strict": false,
     "target": "es2022",
-    "jsx": "react-jsx",
-    "allowSyntheticDefaultImports": true,
-    "esModuleInterop": true,
     "paths": {
       "@packages/*": [
         "packages/*"

@@ -1,4 +1,6 @@
-export const preProcessData = (userActions: any, products: any) => {
+import { products } from "@prisma/client";
+
+export const preProcessData = (userActions: any, products: products) => {
   const interactions: any = [];
 
   userActions.forEach((action: any) => {

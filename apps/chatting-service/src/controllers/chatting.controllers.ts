@@ -91,7 +91,7 @@ export const getUserConversations = async (
     });
 
     const responseData = await Promise.all(
-      conversations.map(async (group: { id: string; updatedAt: any; }) => {
+      conversations.map(async (group) => {
         // Get the sellerParticipant inside this conversation
         const sellerParticipant = await prisma.participant.findFirst({
           where: {
@@ -176,7 +176,7 @@ export const getSellerConversations = async (
     });
 
     const responseData = await Promise.all(
-      conversations.map(async (group: { id: string; updatedAt: any; }) => {
+      conversations.map(async (group) => {
         // Get the userParticipant (NOT seller) for this conversation
         const userParticipant = await prisma.participant.findFirst({
           where: {

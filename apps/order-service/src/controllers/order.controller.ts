@@ -6,6 +6,7 @@ import crypto from "crypto";
 import Stripe from "stripe";
 import { Prisma } from "@prisma/client";
 import { sendEmail } from "../utils/send-email";
+import { sendLog } from "@packages/utils/logs/send-logs";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2025-02-24.acacia",
@@ -117,7 +118,7 @@ export const createPaymentSession = async (
       },
     });
 
-    const sellerData = shops.map((shop:any) => ({
+    const sellerData = shops.map((shop) => ({
       shopId: shop.id,
       sellerId: shop.sellerId,
       stripeAccountOd: shop?.sellers?.stripeId,
@@ -491,7 +492,7 @@ export const getOrderDetails = async (
       : null;
 
     // fetch all products details in one go
-    const productIds = order.items.map((item:any) => item.productId);
+    const productIds = order.items.map((item) => item.productId);
 
     const products = await prisma.products.findMany({
       where: {
@@ -504,9 +505,9 @@ export const getOrderDetails = async (
       },
     });
 
-    const productMap = new Map(products.map((p:any) => [p.id, p]));
+    const productMap = new Map(products.map((p) => [p.id, p]));
 
-    const items = order.items.map((item:any) => ({
+    const items = order.items.map((item) => ({
       ...item,
       selectedOptions: item.selectedOptions,
       product: productMap.get(item.productId) || null,

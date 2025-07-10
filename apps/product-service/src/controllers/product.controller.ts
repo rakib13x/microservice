@@ -474,8 +474,8 @@ export const getAllProducts = async (
 
     const orderBy: Prisma.productsOrderByWithRelationInput =
       type === "latest"
-        ? { createdAt: "desc" as any }
-        : { totalSales: "desc" as any };
+        ? { createdAt: "desc" as Prisma.SortOrder }
+        : { totalSales: "desc" as Prisma.SortOrder };
 
     const [products, total, top10Products] = await Promise.all([
       prisma.products.findMany({
@@ -879,7 +879,7 @@ export const topShops = async (
     });
 
     // Fetch the corresponding shop details
-    const shopIds = topShopsData.map((item: any) => item.shopId);
+    const shopIds = topShopsData.map((item) => item.shopId);
 
     const shops = await prisma.shops.findMany({
       where: {
@@ -900,8 +900,8 @@ export const topShops = async (
     });
 
     // Merge sales with shop data
-    const enrichedShops = shops.map((shop: any) => {
-      const salesData = topShopsData.find((s: any) => s.shopId === shop.id);
+    const enrichedShops = shops.map((shop) => {
+      const salesData = topShopsData.find((s) => s.shopId === shop.id);
       return {
         ...shop,
         totalSales: salesData?._sum.total ?? 0,
@@ -909,7 +909,7 @@ export const topShops = async (
     });
 
     const top10Shops = enrichedShops
-      .sort((a: any, b: any) => b.totalSales - a.totalSales)
+      .sort((a, b) => b.totalSales - a.totalSales)
       .slice(0, 10);
 
     return res.status(200).json({ shops: top10Shops });
