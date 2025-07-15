@@ -3,6 +3,7 @@
   "compilerOptions": {
     "jsx": "preserve",
     "noEmit": true,
+    "strict": false,
     "emitDeclarationOnly": false,
     "esModuleInterop": true,
     "module": "esnext",
@@ -43,12 +44,16 @@
     ".next/types/**/*.ts"
   ],
   "exclude": [
-    "out-tsc",
-    "dist",
     "node_modules",
-    "jest.config.ts",
-    "src/**/*.spec.ts",
-    "src/**/*.test.ts",
+    "npm-debug.log",
+    "Dockerfile",
+    "*.md",
+    ".git",
+    ".gitignore",
+    "src/**/*.test.*",
+    "src/**/*.spec.*",
+    "coverage",
+    "dist",
     ".next"
   ]
 }

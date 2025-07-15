@@ -304,7 +304,7 @@ const CartPage = () => {
                     <select
                       className="w-full p-2 border border-gray-200 rounded-md focus:outline-none focus:border-blue-500"
                       value={selectedAddressId}
-                      onChange={(e) => setSelectedAddressId(e.target.value)}
+                      onChange={(e:any) => setSelectedAddressId(e.target.value)}
                     >
                       {addresses?.map((address: any) => (
                         <option key={address.id} value={address.id}>

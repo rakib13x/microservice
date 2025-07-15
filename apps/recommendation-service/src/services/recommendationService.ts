@@ -1,6 +1,10 @@
-import * as tf from "@tensorflow/tfjs-node";
+import * as tf from "@tensorflow/tfjs";
+import "@tensorflow/tfjs-backend-cpu";
 import { getUserActivity } from "./fetch-user-activity";
 import { preProcessData } from "../utils/preProcessData";
+
+// Set CPU backend for lightweight operation
+tf.setBackend('cpu');
 
 const EMBEDDING_DIM = 50;
 

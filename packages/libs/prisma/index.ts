@@ -2,12 +2,19 @@ import { PrismaClient } from "@prisma/client";
 
 declare global {
   namespace globalThis {
-    var prismadb: PrismaClient;
+    var prismadb: PrismaClient | undefined;
   }
 }
 
-const prisma = new PrismaClient();
+const getPrismaClient = () => {
+  if (process.env.NODE_ENV === "production") {
+    if (!global.prismadb) {
+      global.prismadb = new PrismaClient();
+    }
+    return global.prismadb;
+  } else {
+    return new PrismaClient();
+  }
+};
 
-if (process.env.NODE_ENV === "production") global.prismadb = prisma;
-
-export default prisma;
+export default getPrismaClient();

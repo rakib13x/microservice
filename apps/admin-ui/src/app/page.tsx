@@ -1,7 +1,7 @@
 "use client";
 import { useMutation } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import Input from "packages/components/input";
+import Input from "@eshop/components/input";
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import axios, { AxiosError } from "axios";

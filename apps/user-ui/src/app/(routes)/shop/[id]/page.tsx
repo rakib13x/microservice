@@ -12,9 +12,10 @@ async function fetchSellerDetails(id: string) {
 export async function generateMetadata({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }): Promise<Metadata> {
-  const data = await fetchSellerDetails(params.id);
+  const { id } = await params;
+  const data = await fetchSellerDetails(id);
 
   return {
     title: `${data?.shop?.name} | Eshop Marketplace`,
@@ -47,8 +48,9 @@ export async function generateMetadata({
   };
 }
 
-const Page = async ({ params }: { params: { id: string } }) => {
-  const data = await fetchSellerDetails(params.id);
+const Page = async ({ params }: { params: Promise<{ id: string }> }) => {
+  const { id } = await params;
+  const data = await fetchSellerDetails(id);
   return (
     <div>
       <SellerProfile shop={data?.shop} followersCount={data?.followersCount} />

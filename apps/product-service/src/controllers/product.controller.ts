@@ -5,13 +5,29 @@ import {
 } from "@packages/error-handler";
 import { imagekit } from "@packages/libs/imagekit";
 import prisma from "@packages/libs/prisma";
-import { Prisma } from "@prisma/client";
 import { NextFunction, Request, Response } from "express";
 import Stripe from "stripe";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2025-02-24.acacia",
 });
+
+// Test endpoint to check environment variables
+export const testEnv = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    console.log("DATABASE_URL in controller:", process.env.DATABASE_URL ? "SET" : "NOT SET");
+    res.status(200).json({
+      message: "Environment test",
+      databaseUrl: process.env.DATABASE_URL ? "SET" : "NOT SET"
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
 
 // get product categories
 export const getCategories = async (
@@ -472,10 +488,10 @@ export const getAllProducts = async (
       ],
     };
 
-    const orderBy: Prisma.productsOrderByWithRelationInput =
+    const orderBy: any =
       type === "latest"
-        ? { createdAt: "desc" as Prisma.SortOrder }
-        : { totalSales: "desc" as Prisma.SortOrder };
+        ? { createdAt: "desc" }
+        : { totalSales: "desc" };
 
     const [products, total, top10Products] = await Promise.all([
       prisma.products.findMany({

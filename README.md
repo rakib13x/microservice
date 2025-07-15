@@ -26,22 +26,26 @@ We retain full rights under the **laws of the United Kingdom and Wales**. Legal 
 | `auth-service`           | Handles login, register, token refresh, etc.      | 6001 |
 | `auth-service-e2e`       | End-to-end test suite for `auth-service`          | -    |
 | `chatting-service`       | Real-time chat service between buyers and sellers | 6006 |
-| `kafka-service`          | Kafka setup for event-driven messaging            | 6007 |
+| `kafka-service`          | Kafka setup for event-driven messaging            |  -   |
 | `logger-service`         | Captures logs/events across all services          | 6008 |
 | `order-service`          | Manages orders, statuses, shipping, etc.          | 6003 |
 | `product-service`        | Handles products, categories, filtering           | 6002 |
-| `recommendation-service` | AI-based product recommendations                  | 6009 |
+| `recommendation-service` | AI-based product recommendations                  | 6007 |
 | `seller-service`         | Seller profile, store data, and control center    | 6004 |
 | `seller-ui`              | Seller dashboard interface                        | 3001 |
 | `user-ui`                | Main user-facing frontend                         | 3000 |
 
+> **Note:** `kafka-service` and `auth-service-e2e` don't have ports as they are not Express applications. The kafka-service is a Kafka consumer that processes events in the background.
+
 ---
 
-## 🚀 Getting Started (Run Locally with Docker)
+## 🚀 Getting Started
 
 ### Prerequisites
 
-- **Docker** and **Docker Compose** installed
+- **Node.js** (v18 or higher)
+- **npm** or **pnpm**
+- **Docker** and **Docker Compose** (for Kafka infrastructure and production deployment)
 - **Git** for cloning the repository
 
 ### 1. Clone the Repository
@@ -61,36 +65,55 @@ cp .env.example .env
 
 **Important:** Update the `.env` file with your actual credentials (see Environment Variables section below).
 
-### 3. Build and Run with Docker
+### 3. Install Dependencies
 
-#### Option A: Run All Services (Recommended)
+```bash
+npm install
+# or
+pnpm install
+```
+
+### 4. Start Kafka Infrastructure
+
+```bash
+# Start Kafka, Zookeeper, and create topics
+npm run docker:start-kafka-stack
+```
+
+### 5. Development Mode (Recommended for Local Development)
+
+```bash
+# Start all services in development mode with hot reload
+npm run dev
+```
+
+This command will start all backend services and frontend applications simultaneously with hot reload enabled.
+
+### 6. Production Mode (Local Testing)
 
 ```bash
 # Build all services
-docker-compose build
+npm run build
 
-# Start all services in detached mode
-docker-compose up -d
+# Start all services in production mode
+npm run start:prod
 ```
 
-#### Option B: Run Specific Services
+### 7. Docker Production Mode (Production-like Testing)
 
 ```bash
-# Run only backend services
-docker-compose up -d auth-service product-service order-service api-gateway
+# Build and run all services with Docker
+npm run docker:prod
 
-# Run only UI services
-docker-compose up -d user-ui seller-ui admin-ui
+# Or use individual Docker commands:
+npm run docker:build    # Build all Docker images
+npm run docker:run      # Run all services
+npm run docker:stop     # Stop all services
+npm run docker:clean    # Clean up containers and images
+npm run docker:logs     # View logs from all services
 ```
 
-#### Option C: Development Mode (with logs)
-
-```bash
-# Run with real-time logs
-docker-compose up
-```
-
-### 4. Access the Applications
+### 8. Access the Applications
 
 Once all services are running:
 
@@ -100,25 +123,6 @@ Once all services are running:
 | **Seller Dashboard** | http://localhost:3001 | Seller management interface |
 | **Admin Panel**      | http://localhost:3002 | Admin control center        |
 | **API Gateway**      | http://localhost:8080 | Backend API endpoint        |
-
-### 5. Useful Docker Commands
-
-```bash
-# View running containers
-docker-compose ps
-
-# View logs for specific service
-docker-compose logs -f auth-service
-
-# Stop all services
-docker-compose down
-
-# Rebuild and restart
-docker-compose down && docker-compose build && docker-compose up -d
-
-# Remove all containers and volumes
-docker-compose down -v
-```
 
 ---
 
@@ -233,21 +237,20 @@ IMAGEKIT_SECRET_KEY="private_abc..."
 
 ---
 
-### 📡 Kafka Keys – Confluent Cloud Setup
+### 📡 Kafka Setup – Docker Infrastructure
 
-1. Go to [https://confluent.cloud](https://confluent.cloud)
-2. Create an account and a **Kafka Cluster** (Basic Tier is free).
-3. Go to your **Kafka Cluster → API Keys → Create Key**
-   - Enable for **Global Access**
-   - Copy the **Key** and **Secret**
-4. Create 2 Kafka Topics:
-   - `user-events`
-   - `logs`
+Kafka is now handled via Docker infrastructure. The required Kafka topics are automatically created when you run:
 
-```env
-KAFKA_API_KEY="V2UYZT...XYZ"
-KAFKA_API_SECRET="0uTZP9...ASD"
+```bash
+npm run docker:start-kafka-stack
 ```
+
+This will create the following topics:
+- `user-events`
+- `logs`
+- `chat.new_message`
+
+**No additional Kafka configuration is needed** - the Docker setup handles everything locally.
 
 ---
 
@@ -273,9 +276,6 @@ NEXT_PUBLIC_STRIPE_PUBLIC_KEY="pk_test_..."
 
 IMAGEKIT_PUBLIC_KEY="public_..."
 IMAGEKIT_SECRET_KEY="private_..."
-
-KAFKA_API_KEY="abc123"
-KAFKA_API_SECRET="secret123"
 ```
 
 ---
@@ -285,41 +285,64 @@ KAFKA_API_SECRET="secret123"
 ### Microservices Architecture
 
 - **API Gateway** (Port 8080) - Single entry point for all client requests
-- **Backend Services** (Ports 6001-6009) - Independent microservices
+- **Backend Services** (Ports 6001-6008) - Independent microservices
 - **Frontend Applications** (Ports 3000-3002) - React/Next.js applications
-- **Cloud Infrastructure** - MongoDB Atlas, Upstash Redis, Confluent Kafka
+- **Kafka Consumer Service** - Event-driven messaging (no port, background service)
+- **Cloud Infrastructure** - MongoDB Atlas, Upstash Redis, Docker Kafka
+
+### NX Monorepo Structure
+
+- **Unified Development** - Single `npm run dev` command starts all services
+- **Shared Packages** - Common utilities, components, and middleware
+- **Independent Deployment** - Each service can be built and deployed separately
+- **Hot Reload** - Fast development with automatic reloading
 
 ### Docker Setup
 
-- **Multi-stage builds** for optimized image sizes (~70MB per service)
+- **Multi-stage builds** for optimized image sizes
 - **Individual Dockerfiles** for each service enabling independent deployment
 - **Resource limits** configured to prevent memory issues
-- **Production-ready** with `docker-compose.prod.yml`
+- **Production-ready** with `docker-compose.production.yml`
+- **Local Kafka Infrastructure** - Dockerized Kafka, Zookeeper, and topic management
 
 ---
 
-## 🔧 Development Setup (Alternative)
+## 📜 Available Scripts
 
-If you prefer running without Docker:
-
-### 1. Install Dependencies
+### Development Scripts
 
 ```bash
-npm install
+npm run dev          # Start all services in development mode with hot reload
+npm run build        # Build all services for production
+npm run start:prod   # Start all services in production mode
 ```
 
-### 2. Run Backend Services
+### Docker Scripts
 
 ```bash
-npm run dev
+npm run docker:prod  # Build and run all services with Docker
+npm run docker:build # Build all Docker images
+npm run docker:run   # Run all services in containers
+npm run docker:stop  # Stop all running containers
+npm run docker:clean # Clean up containers and images
+npm run docker:logs  # View logs from all services
 ```
 
-### 3. Run Frontend Apps (in separate terminals)
+### Kafka Infrastructure Scripts
 
 ```bash
-npm run user-ui      # 👤 User UI (http://localhost:3000)
-npm run seller-ui    # 🛍️ Seller Dashboard (http://localhost:3001)
-npm run admin-ui     # 🧑‍💼 Admin Panel (http://localhost:3002)
+npm run docker:start-kafka-stack # Start Kafka, Zookeeper, and create topics
+npm run docker:stop-kafka-stack  # Stop Kafka infrastructure
+npm run kafka:topics             # List all Kafka topics
+npm run kafka:create-topics      # Create required Kafka topics
+```
+
+### Individual UI Scripts
+
+```bash
+npm run user-ui:prod   # Start user frontend in production mode
+npm run seller-ui:prod # Start seller dashboard in production mode
+npm run admin-ui:prod  # Start admin panel in production mode
 ```
 
 ---
@@ -352,6 +375,9 @@ This app supports:
 - ✅ Seller + User Analytics Dashboard
 - ✅ Event-driven Architecture
 - ✅ Microservices Communication
+- ✅ Real-time Chat System
+- ✅ User Behavior Analytics
+- ✅ Background Event Processing
 
 ---
 
@@ -367,6 +393,17 @@ lsof -i :3000
 lsof -i :8080
 ```
 
+**Development mode issues:**
+
+```bash
+# Clear NX cache
+npx nx reset
+
+# Reinstall dependencies
+rm -rf node_modules package-lock.json
+npm install
+```
+
 **Docker build issues:**
 
 ```bash
@@ -374,14 +411,36 @@ lsof -i :8080
 docker system prune -a
 
 # Rebuild from scratch
-docker-compose build --no-cache
+npm run docker:clean
+npm run docker:build
 ```
 
 **Environment variables not loading:**
 
 - Ensure `.env` file is in the root directory
 - Check for typos in variable names
-- Restart Docker containers after `.env` changes
+- Restart services after `.env` changes
+
+**Kafka connection issues:**
+
+```bash
+# Restart Kafka infrastructure
+npm run docker:stop-kafka-stack
+npm run docker:start-kafka-stack
+
+# Check Kafka topics
+npm run kafka:topics
+```
+
+**Service startup issues:**
+
+```bash
+# Check individual service logs
+npm run docker:logs
+
+# Restart specific service (development mode)
+npx nx serve <service-name>
+```
 
 ---
 

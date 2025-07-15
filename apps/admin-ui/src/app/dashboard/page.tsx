@@ -14,8 +14,23 @@ import {
   Tooltip,
   Legend,
 } from "recharts";
-import { SalesChart } from "../../shared/components/charts/sale-chart";
-import GeographicalMap from "../../shared/components/charts/geographicalMap";
+import dynamic from "next/dynamic";
+
+const SalesChart = dynamic(
+  () =>
+    import("../../shared/components/charts/sale-chart").then(
+      (mod) => mod.SalesChart
+    ),
+  {
+    ssr: false,
+    loading: () => <p className="text-white">Loading SalesChart...</p>,
+  }
+);
+
+const GeographicalMap = dynamic(
+  () => import("../../shared/components/charts/geographicalMap"),
+  { ssr: false, loading: () => <p className="text-white">Loading Map...</p> }
+);
 
 // Device data
 const deviceData = [

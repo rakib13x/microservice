@@ -17,6 +17,7 @@ import {
   getStripeAccount,
   restoreProduct,
   searchProducts,
+  testEnv,
   topShops,
   uploadProductImage,
 } from "../controllers/product.controller";
@@ -25,6 +26,7 @@ import { isSeller } from "@packages/middleware/authorizeRoles";
 
 const router: Router = express.Router();
 
+router.get("/test-env", testEnv);
 router.get("/get-categories", getCategories);
 router.post("/create-discount-code", isAuthenticated, createDiscountCodes);
 router.get("/get-discount-codes", isAuthenticated, getDiscountCodes);

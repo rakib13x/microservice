@@ -122,14 +122,12 @@ Thumbs.db
 
 # Build artifacts
 build/
-dist/
-.nx/
+nx/
 node_modules
 .git
 .next
 dist
 *.log
-.env*
 .vscode
 .nx
 README.md
@@ -140,3 +138,15 @@ __tests__
 *.spec.*
 coverage
 .nyc_output
+
+# Additional optimizations
+**/.next/cache
+**/node_modules/.cache
+**/.nx/cache
+**/coverage
+**/*.log
+**/.DS_Store
+**/Thumbs.db
+
+!apps/product-service/dist
+!apps/product-service/prisma

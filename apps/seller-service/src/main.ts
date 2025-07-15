@@ -33,7 +33,7 @@ app.use("/api", router);
 
 app.use(errorMiddleware);
 
-const port = process.env.PORT || 6003;
+const port = process.env.PORT || 6004;
 const server = app.listen(port, () => {
   console.log(`Seller service is running at http://localhost:${port}/api`);
   console.log(`Swagger Docs available at http://localhost:${port}/docs`);

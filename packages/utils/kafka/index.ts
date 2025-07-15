@@ -1,12 +1,17 @@
 import { Kafka } from "kafkajs";
 
+// Use different broker addresses for Docker vs local development
+const getBrokers = () => {
+  if (process.env.NODE_ENV === 'production' || process.env.DOCKER_ENV === 'true') {
+    // Inside Docker containers, use service name
+    return [process.env.KAFKA_BROKERS || "kafka:29092"];
+  } else {
+    // Local development, use localhost
+    return [process.env.KAFKA_BROKERS || "localhost:9092"];
+  }
+};
+
 export const kafka = new Kafka({
-  clientId: "kafka-service",
-  brokers: ["pkc-xrnwx.asia-south2.gcp.confluent.cloud:9092"],
-  ssl: true,
-  sasl: {
-    mechanism: "plain",
-    username: process.env.KAFKA_API_KEY!,
-    password: process.env.KAFKA_API_SECRET!,
-  },
+  clientId: "eshop-kafka-client",
+  brokers: getBrokers(),
 });
