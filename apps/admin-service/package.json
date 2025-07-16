@@ -6,15 +6,13 @@
   "scripts": {
     "build": "nx build admin-service",
     "start": "node dist/main.js",
-    "dev": "nx build admin-service && node dist/main.js"
+    "dev": "nx build admin-service"
   },
   "dependencies": {
     "express": "^4.18.0",
     "cors": "^2.8.5",
     "dotenv": "^16.0.0",
     "tslib": "^2.6.0",
-    "@eshop/error-handler": "workspace:*",
-    "@eshop/prisma": "workspace:*",
     "typescript": "^5.0.0",
     "cookie-parser": "^1.4.6",
     "path": "^0.12.7",

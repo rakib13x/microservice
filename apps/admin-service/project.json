@@ -24,6 +24,22 @@
           "inspect": false
         }
       }
+    },
+    "serve": {
+      "executor": "@nx/js:node",
+      "defaultConfiguration": "development",
+      "options": {
+        "buildTarget": "admin-service:build"
+      },
+      "configurations": {
+        "development": {
+          "buildTarget": "admin-service:build:development"
+        },
+        "production": {
+          "buildTarget": "admin-service:build:production"
+        }
+      }
     }
-  }
+  },
+  "tags": []
 }

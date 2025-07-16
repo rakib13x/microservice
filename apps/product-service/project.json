@@ -11,10 +11,9 @@
       "options": {
         "target": "node",
         "compiler": "tsc",
-        "outputPath": "dist/apps/product-service",
+        "outputPath": "apps/product-service/dist",
         "main": "apps/product-service/src/main.ts",
         "tsConfig": "apps/product-service/tsconfig.app.json",
-        "assets": ["apps/product-service/src/assets"],
         "webpackConfig": "apps/product-service/webpack.config.js"
       },
       "configurations": {
