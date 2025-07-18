@@ -13,15 +13,9 @@ env:
   DOCKER_PASSWORD: ${{ secrets.DOCKERHUB_TOKEN }}
 
 jobs:
-  # Build backend services FIRST (excluding api-gateway)
-  build-backend-services:
+  # Install dependencies once and cache them
+  install-dependencies:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        service: [auth-service, product-service, order-service, seller-service, admin-service, chatting-service, kafka-service, logger-service, recommendation-service]
-      fail-fast: false
-      max-parallel: 3
-    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -34,13 +28,76 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
-          cache: 'pnpm'
+          node-version: "18"
+          cache: "pnpm"
 
-      - name: Install dependencies and build
+      - name: Install root dependencies
         run: |
-          pnpm install
-          pnpm run build
+          pnpm install --frozen-lockfile
+
+      - name: Generate Prisma Client
+        run: |
+          npx prisma generate
+
+      - name: Cache node_modules
+        uses: actions/cache/save@v3
+        with:
+          path: |
+            node_modules
+            apps/*/node_modules
+            packages/*/node_modules
+            ~/.cache/ms-playwright
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+
+  # Build backend services (excluding api-gateway)
+  build-backend-services:
+    needs: install-dependencies
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service:
+          [
+            auth-service,
+            product-service,
+            order-service,
+            seller-service,
+            admin-service,
+            chatting-service,
+            kafka-service,
+            logger-service,
+            recommendation-service,
+          ]
+      fail-fast: false
+      max-parallel: 3
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: latest
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+
+      - name: Restore cached dependencies
+        uses: actions/cache/restore@v3
+        with:
+          path: |
+            node_modules
+            apps/*/node_modules
+            packages/*/node_modules
+            ~/.cache/ms-playwright
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+
+      - name: Build specific service
+        run: |
+          # Build only this specific service using nx
+          npx nx build ${{ matrix.service }}
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -53,16 +110,16 @@ jobs:
 
       - name: Build and push Docker image
         run: |
-          # Build from ROOT directory with correct context - just like local-production.sh!
+          # Build from ROOT directory with correct context
           docker build -t ${{ env.DOCKER_USERNAME }}/${{ matrix.service }}:latest -f apps/${{ matrix.service }}/Dockerfile .
           docker push ${{ env.DOCKER_USERNAME }}/${{ matrix.service }}:latest
           echo "✅ ${{ matrix.service }} built and pushed successfully"
 
   # Build API Gateway LAST (after all backend services)
   build-api-gateway:
-    needs: [build-backend-services]
+    needs: [install-dependencies, build-backend-services]
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -75,13 +132,22 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
-          cache: 'pnpm'
+          node-version: "18"
 
-      - name: Install dependencies and build
+      - name: Restore cached dependencies
+        uses: actions/cache/restore@v3
+        with:
+          path: |
+            node_modules
+            apps/*/node_modules
+            packages/*/node_modules
+            ~/.cache/ms-playwright
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+
+      - name: Build API Gateway
         run: |
-          pnpm install
-          pnpm run build
+          # Build only the API Gateway service
+          npx nx build api-gateway
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -101,13 +167,14 @@ jobs:
 
   # Build all frontend services
   build-frontend:
+    needs: install-dependencies
     runs-on: ubuntu-latest
     strategy:
       matrix:
         service: [user-ui, seller-ui, admin-ui]
       fail-fast: false
       max-parallel: 2
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -120,13 +187,22 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
-          cache: 'pnpm'
+          node-version: "18"
 
-      - name: Install dependencies and build
+      - name: Restore cached dependencies
+        uses: actions/cache/restore@v3
+        with:
+          path: |
+            node_modules
+            apps/*/node_modules
+            packages/*/node_modules
+            ~/.cache/ms-playwright
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+
+      - name: Build specific frontend service
         run: |
-          pnpm install
-          pnpm run build
+          # Build only this specific frontend service using nx
+          npx nx build ${{ matrix.service }}
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -139,7 +215,7 @@ jobs:
 
       - name: Build and push Docker image
         run: |
-          # Build from ROOT directory with correct context - just like local-production.sh!
+          # Build from ROOT directory with correct context
           docker build -t ${{ env.DOCKER_USERNAME }}/${{ matrix.service }}:latest -f apps/${{ matrix.service }}/Dockerfile .
           docker push ${{ env.DOCKER_USERNAME }}/${{ matrix.service }}:latest
           echo "✅ ${{ matrix.service }} built and pushed successfully"
@@ -149,7 +225,7 @@ jobs:
     needs: [build-backend-services, build-api-gateway, build-frontend]
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/master' && github.event_name == 'push'
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -164,25 +240,26 @@ jobs:
           script: |
             # Navigate to app directory
             cd /home/ec2-user/eshop
-            
+
             # Pull latest code
             git pull origin master
-            
+
             # Set environment variables for deployment script
             export DOCKER_USERNAME="${{ secrets.DOCKERHUB_USERNAME }}"
             export CHANGED_BACKEND='["auth-service","product-service","order-service","seller-service","admin-service","chatting-service","kafka-service","logger-service","recommendation-service","api-gateway"]'
             export CHANGED_FRONTEND='["user-ui","seller-ui","admin-ui"]'
-            
+
             # Make script executable and run deployment
             chmod +x scripts/deploy-production.sh
             ./scripts/deploy-production.sh
 
   # Optional: Deploy notification
   notify-completion:
-    needs: [build-backend-services, build-api-gateway, build-frontend, deploy-to-ec2]
+    needs:
+      [build-backend-services, build-api-gateway, build-frontend, deploy-to-ec2]
     runs-on: ubuntu-latest
     if: always()
-    
+
     steps:
       - name: Build & Deploy Summary
         run: |
