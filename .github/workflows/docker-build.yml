@@ -156,12 +156,13 @@ jobs:
             if [[ "$CHANGED_BACKEND" != "[]" ]] || [[ "${{ steps.changes.outputs.api-gateway }}" == "true" ]]; then
               CHANGED_BACKEND=$(echo $CHANGED_BACKEND | jq ". + [\"api-gateway\"]")
             fi
-            
-            echo "backend-services=$CHANGED_BACKEND" >> $GITHUB_OUTPUT
-            echo "frontend-services=$CHANGED_FRONTEND" >> $GITHUB_OUTPUT
-            echo "any-backend-changed=$([ "$CHANGED_BACKEND" != "[]" ] && echo true || echo false)" >> $GITHUB_OUTPUT
-            echo "any-frontend-changed=$([ "$CHANGED_FRONTEND" != "[]" ] && echo true || echo false)" >> $GITHUB_OUTPUT
-            echo "any-changed=$([ "$CHANGED_BACKEND" != "[]" ] || [ "$CHANGED_FRONTEND" != "[]" ] && echo true || echo false)" >> $GITHUB_OUTPUT
+          fi
+          
+          echo "backend-services=$CHANGED_BACKEND" >> $GITHUB_OUTPUT
+          echo "frontend-services=$CHANGED_FRONTEND" >> $GITHUB_OUTPUT
+          echo "any-backend-changed=$([ "$CHANGED_BACKEND" != "[]" ] && echo true || echo false)" >> $GITHUB_OUTPUT
+          echo "any-frontend-changed=$([ "$CHANGED_FRONTEND" != "[]" ] && echo true || echo false)" >> $GITHUB_OUTPUT
+          echo "any-changed=$([ "$CHANGED_BACKEND" != "[]" ] || [ "$CHANGED_FRONTEND" != "[]" ] && echo true || echo false)" >> $GITHUB_OUTPUT
 
   # Step 2: Build Backend Services (Critical - Must All Succeed)
   build-backend-services:
