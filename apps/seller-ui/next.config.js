@@ -1,26 +1,26 @@
-const { composePlugins, withNx } = require('@nx/next');
-const path = require('path');
+const { composePlugins, withNx } = require("@nx/next");
 
 const nextConfig = {
   nx: {
     svgr: false,
   },
-  output: 'standalone',
-  experimental: {
-    esmExternals: false,
-    outputFileTracingRoot: path.join(__dirname, '../../'),
+  images: {
+    remotePatterns: [
+      {
+        hostname: "ik.imagekit.io",
+      },
+    ],
   },
+  output: "standalone",
   webpack: (config) => {
     config.resolve.alias = {
       ...config.resolve.alias,
-      '@packages': require('path').resolve(__dirname, '../../packages'),
+      "@packages": require("path").resolve(__dirname, "../../packages"),
     };
     return config;
   },
 };
 
-const plugins = [
-  withNx,
-];
+const plugins = [withNx];
 
 module.exports = composePlugins(...plugins)(nextConfig);

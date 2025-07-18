@@ -37,6 +37,7 @@ print_usage() {
     echo -e "  -s, --stop                  Stop all running containers"
     echo -e "  -c, --clean                 Clean all containers and images"
     echo -e "  -l, --logs <service>        Show logs for specific service"
+    echo -e "  -S, --service <service>      Build Docker image for a specific service"
     echo -e "  -h, --help                  Show this help message"
     echo -e "\n${BLUE}Default: Build, test, and run all services${NC}"
 }
@@ -234,6 +235,26 @@ show_logs() {
     fi
 }
 
+build_specific_service() {
+    local service=$1
+    if [ -z "$service" ]; then
+        echo -e "${RED}❌ Please specify a service name with --service <service-name>${NC}"
+        exit 1
+    fi
+    if [ -f "apps/$service/Dockerfile" ]; then
+        echo -e "${BLUE}Building Docker image for $service...${NC}"
+        docker build -t "$service:latest" -f "apps/$service/Dockerfile" .
+        if [ $? -eq 0 ]; then
+            echo -e "${GREEN}✅ $service image built successfully${NC}"
+        else
+            echo -e "${RED}❌ Failed to build $service image${NC}"
+        fi
+    else
+        echo -e "${RED}❌ Dockerfile not found for $service in apps/$service${NC}"
+        exit 1
+    fi
+}
+
 # Main script logic
 case "$1" in
     -b|--build-only)
@@ -250,6 +271,9 @@ case "$1" in
         ;;
     -l|--logs)
         show_logs "$2"
+        ;;
+    -S|--service)
+        build_specific_service "$2"
         ;;
     -h|--help)
         print_usage

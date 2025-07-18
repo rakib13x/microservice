@@ -1,3 +1,4 @@
+import React from "react";
 import "./global.css";
 import Providers from "./provider";
 import { Poppins } from "next/font/google";

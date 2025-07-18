@@ -185,8 +185,8 @@ importers:
         specifier: ^2.6.0
         version: 2.12.5(@types/react@19.0.0)(react@19.0.0)
       lucide-react:
-        specifier: ^0.294.0
-        version: 0.294.0(react@19.0.0)
+        specifier: ^0.525.0
+        version: 0.525.0(react@19.0.0)
       next:
         specifier: 15.1.8
         version: 15.1.8(@babel/core@7.28.0)(react-dom@19.0.0)(react@19.0.0)
@@ -244,7 +244,7 @@ importers:
     dependencies:
       '@prisma/client':
         specifier: ^6.7.0
-        version: 6.11.1(prisma@6.12.0)(typescript@5.7.3)
+        version: 6.11.1(prisma@5.22.0)(typescript@5.7.3)
       cookie-parser:
         specifier: ^1.4.6
         version: 1.4.7
@@ -265,7 +265,7 @@ importers:
         version: 6.11.2(express@4.21.2)
       morgan:
         specifier: ^1.10.0
-        version: 1.10.0
+        version: 1.10.1
       path:
         specifier: ^0.12.7
         version: 0.12.7
@@ -292,8 +292,8 @@ importers:
         specifier: ^20.0.0
         version: 20.19.8
       prisma:
-        specifier: ^6.7.0
-        version: 6.12.0(typescript@5.7.3)
+        specifier: ^5.0.0
+        version: 5.22.0
 
   apps/auth-service:
     dependencies:
@@ -855,10 +855,10 @@ importers:
         version: 6.11.1(prisma@6.12.0)(typescript@5.7.3)
       '@stripe/react-stripe-js':
         specifier: ^3.6.0
-        version: 3.7.0(@stripe/stripe-js@7.4.0)(react-dom@19.0.0)(react@19.0.0)
+        version: 3.7.0(@stripe/stripe-js@7.5.0)(react-dom@19.0.0)(react@19.0.0)
       '@stripe/stripe-js':
         specifier: ^7.0.0
-        version: 7.4.0
+        version: 7.5.0
       '@tanstack/react-query':
         specifier: ^5.69.0
         version: 5.83.0(react@19.0.0)
@@ -883,9 +883,6 @@ importers:
       jotai:
         specifier: ^2.10.3
         version: 2.12.5(@types/react@19.0.0)(react@19.0.0)
-      kafkajs:
-        specifier: ^2.2.4
-        version: 2.2.4
       lucide-react:
         specifier: ^0.483.0
         version: 0.483.0(react@19.0.0)
@@ -979,10 +976,10 @@ importers:
         version: 6.11.1(prisma@6.12.0)(typescript@5.7.3)
       '@stripe/react-stripe-js':
         specifier: ^3.6.0
-        version: 3.7.0(@stripe/stripe-js@7.4.0)(react-dom@19.0.0)(react@19.0.0)
+        version: 3.7.0(@stripe/stripe-js@7.5.0)(react-dom@19.0.0)(react@19.0.0)
       '@stripe/stripe-js':
         specifier: ^7.0.0
-        version: 7.4.0
+        version: 7.5.0
       '@tanstack/react-query':
         specifier: ^5.69.0
         version: 5.83.0(react@19.0.0)
@@ -1002,8 +999,8 @@ importers:
         specifier: ^2.2.4
         version: 2.2.4
       lucide-react:
-        specifier: ^0.483.0
-        version: 0.483.0(react@19.0.0)
+        specifier: ^0.525.0
+        version: 0.525.0(react@19.0.0)
       next:
         specifier: ~15.1.4
         version: 15.1.8(@babel/core@7.28.0)(react-dom@19.0.0)(react@19.0.0)
@@ -1072,8 +1069,8 @@ importers:
   packages/components:
     dependencies:
       lucide-react:
-        specifier: ^0.483.0
-        version: 0.483.0(react@19.0.0)
+        specifier: ^0.525.0
+        version: 0.525.0(react@19.0.0)
       react:
         specifier: 19.0.0
         version: 19.0.0
@@ -2565,8 +2562,8 @@ packages:
     resolution: {integrity: sha512-0hYQ8SB4Db5zvZB4axdMHGwEaQjkZzFjQiN9LVYvIFB2nSUHW9tYpxWriPrWDASIxiaXax83REcLxuSdnGPZtw==}
     dev: true
 
-  /@bufbuild/protobuf@2.6.0:
-    resolution: {integrity: sha512-6cuonJVNOIL7lTj5zgo/Rc2bKAo4/GvN+rKCrUj7GdEHRzCk8zKOfFwUsL9nAVk5rSIsRmlgcpLzTRysopEeeg==}
+  /@bufbuild/protobuf@2.6.1:
+    resolution: {integrity: sha512-DaG6XlyKpz08bmHY5SGX2gfIllaqtDJ/KwVoxsmP22COOLYwDBe7yD3DZGwXem/Xq7QOc9cuR7R3MpAv5CFfDw==}
     dev: true
 
   /@cspotcode/source-map-support@0.8.1:
@@ -3479,7 +3476,7 @@ packages:
     resolution: {integrity: sha512-+g/1TKjFuGrf1Hh0QPCv0gISwBxJ+MQSNXmG9zjHy7BmFhtoJ9fdNhWJp3qUKRi93AOZHXtdxZgJ1vAtz6z65w==}
     engines: {node: ^18.14.0 || ^20.0.0 || ^22.0.0 || >=24.0.0}
     dependencies:
-      '@sinclair/typebox': 0.34.37
+      '@sinclair/typebox': 0.34.38
     dev: true
 
   /@jest/source-map@29.6.3:
@@ -5128,6 +5125,23 @@ packages:
       prisma: 5.22.0
     dev: false
 
+  /@prisma/client@6.11.1(prisma@5.22.0)(typescript@5.7.3):
+    resolution: {integrity: sha512-5CLFh8QP6KxRm83pJ84jaVCeSVPQr8k0L2SEtOJHwdkS57/VQDcI/wQpGmdyOZi+D9gdNabdo8tj1Uk+w+upsQ==}
+    engines: {node: '>=18.18'}
+    requiresBuild: true
+    peerDependencies:
+      prisma: '*'
+      typescript: '>=5.1.0'
+    peerDependenciesMeta:
+      prisma:
+        optional: true
+      typescript:
+        optional: true
+    dependencies:
+      prisma: 5.22.0
+      typescript: 5.7.3
+    dev: false
+
   /@prisma/client@6.11.1(prisma@6.12.0)(typescript@5.7.3):
     resolution: {integrity: sha512-5CLFh8QP6KxRm83pJ84jaVCeSVPQr8k0L2SEtOJHwdkS57/VQDcI/wQpGmdyOZi+D9gdNabdo8tj1Uk+w+upsQ==}
     engines: {node: '>=18.18'}
@@ -5337,8 +5351,8 @@ packages:
     resolution: {integrity: sha512-+Fj43pSMwJs4KRrH/938Uf+uAELIgVBmQzg/q1YG10djyfA3TnrU8N8XzqCh/okZdszqBQTZf96idMfE5lnwTA==}
     dev: true
 
-  /@sinclair/typebox@0.34.37:
-    resolution: {integrity: sha512-2TRuQVgQYfy+EzHRTIvkhv2ADEouJ2xNS/Vq+W5EuuewBdOrvATvljZTxHWZSTYr2sTjTHpGvucaGAt67S2akw==}
+  /@sinclair/typebox@0.34.38:
+    resolution: {integrity: sha512-HpkxMmc2XmZKhvaKIZZThlHmx1L0I/V1hWK1NubtlFnr6ZqdiOpV72TKudZUNQjZNsyDBay72qFEhEvb+bcwcA==}
     dev: true
 
   /@sindresorhus/is@4.6.0:
@@ -5362,21 +5376,21 @@ packages:
     resolution: {integrity: sha512-9BCxFwvbGg/RsZK9tjXd8s4UcwR0MWeFQ1XEKIQVVvAGJyINdrqKMcTRyLoK8Rse1GjzLV9cwjWV1olXRWEXVA==}
     dev: false
 
-  /@stripe/react-stripe-js@3.7.0(@stripe/stripe-js@7.4.0)(react-dom@19.0.0)(react@19.0.0):
+  /@stripe/react-stripe-js@3.7.0(@stripe/stripe-js@7.5.0)(react-dom@19.0.0)(react@19.0.0):
     resolution: {integrity: sha512-PYls/2S9l0FF+2n0wHaEJsEU8x7CmBagiH7zYOsxbBlLIHEsqUIQ4MlIAbV9Zg6xwT8jlYdlRIyBTHmO3yM7kQ==}
     peerDependencies:
       '@stripe/stripe-js': '>=1.44.1 <8.0.0'
       react: '>=16.8.0 <20.0.0'
       react-dom: '>=16.8.0 <20.0.0'
     dependencies:
-      '@stripe/stripe-js': 7.4.0
+      '@stripe/stripe-js': 7.5.0
       prop-types: 15.8.1
       react: 19.0.0
       react-dom: 19.0.0(react@19.0.0)
     dev: false
 
-  /@stripe/stripe-js@7.4.0:
-    resolution: {integrity: sha512-lQHQPfXPTBeh0XFjq6PqSBAyR7umwcJbvJhXV77uGCUDD6ymXJU/f2164ydLMLCCceNuPlbV9b+1smx98efwWQ==}
+  /@stripe/stripe-js@7.5.0:
+    resolution: {integrity: sha512-Cq3KKe+G1o7PSBMbmrgpT2JgBeyH2THHr3RdIX2MqF7AnBuspIMgtZ3ktcCgP7kZsTMvnmWymr7zZCT1zeWbMw==}
     engines: {node: '>=12.16'}
     dev: false
 
@@ -6177,7 +6191,7 @@ packages:
     resolution: {integrity: sha512-8nneRWKCg3rMtF69nLQJnOYUcbafYeFSjqkw3jCRLsqkWFlHaoQrr5mXmofFGOx3DKn7UfmBMyov8ySvLRVldA==}
     dependencies:
       '@types/node': 20.19.8
-      form-data: 4.0.3
+      form-data: 4.0.4
     dev: false
 
   /@types/node-forge@1.3.13:
@@ -7170,7 +7184,7 @@ packages:
     resolution: {integrity: sha512-/1xYAC4MP/HEG+3duIhFr4ZQXR4sQXOIe+o6sdqzeykGLx6Upp/1p8MHqhINOvGeP7xyNHe7tsiJByc4SSVUxw==}
     dependencies:
       follow-redirects: 1.15.9(debug@4.4.1)
-      form-data: 4.0.3
+      form-data: 4.0.4
       proxy-from-env: 1.1.0
     transitivePeerDependencies:
       - debug
@@ -7467,7 +7481,7 @@ packages:
     hasBin: true
     dependencies:
       caniuse-lite: 1.0.30001727
-      electron-to-chromium: 1.5.185
+      electron-to-chromium: 1.5.187
       node-releases: 2.0.19
       update-browserslist-db: 1.1.3(browserslist@4.25.1)
 
@@ -7853,15 +7867,15 @@ packages:
       mime-db: 1.54.0
     dev: true
 
-  /compression@1.8.0:
-    resolution: {integrity: sha512-k6WLKfunuqCYD3t6AsuPGvQWaKwuLLh2/xHNcX4qE+vIfDNXpSqnrhwA7O53R7WVQUnt8dVAIW+YHr7xTgOgGA==}
+  /compression@1.8.1:
+    resolution: {integrity: sha512-9mAqGPHLakhCLeNyxPkK4xVo746zQ/czLH1Ky+vkitMnWfWZps8r0qXuwhwizagCRttsL4lfG4pIOvaWLpAP0w==}
     engines: {node: '>= 0.8.0'}
     dependencies:
       bytes: 3.1.2
       compressible: 2.0.18
       debug: 2.6.9
       negotiator: 0.6.4
-      on-headers: 1.0.2
+      on-headers: 1.1.0
       safe-buffer: 5.2.1
       vary: 1.1.2
     transitivePeerDependencies:
@@ -8792,8 +8806,8 @@ packages:
     dependencies:
       jake: 10.9.2
 
-  /electron-to-chromium@1.5.185:
-    resolution: {integrity: sha512-dYOZfUk57hSMPePoIQ1fZWl1Fkj+OshhEVuPacNKWzC1efe56OsHY3l/jCfiAgIICOU3VgOIdoq7ahg7r7n6MQ==}
+  /electron-to-chromium@1.5.187:
+    resolution: {integrity: sha512-cl5Jc9I0KGUoOoSbxvTywTa40uspGJt/BDBoDLoxJRSBpWh4FFXBsjNRHfQrONsV/OoEjDfHUmZQa2d6Ze4YgA==}
 
   /emittery@0.13.1:
     resolution: {integrity: sha512-DeWwawk6r5yR9jFgnDKYt4sLS0LmHJJi3ZOnb5/JdbYwj3nW+FxQnHIjhBKz8YLC7oRNPVM9NQ47I3CVx34eqQ==}
@@ -9916,8 +9930,8 @@ packages:
       mime-types: 2.1.35
     dev: false
 
-  /form-data@4.0.3:
-    resolution: {integrity: sha512-qsITQPfmvMOSAdeyZ+12I1c+CKSstAFAwu+97zrnWAbIr5u8wfsExUzCesVLC8NgHuRUqNN4Zy6UPWUTRGslcA==}
+  /form-data@4.0.4:
+    resolution: {integrity: sha512-KrGhL9Q4zjj0kiUt5OO4Mr/A/jlI2jDYs5eHBpYHPcBEVSiipAvn2Ko2HnPe20rmcuuvMHNdZFp+4IlGTMF0Ow==}
     engines: {node: '>= 6'}
     dependencies:
       asynckit: 0.4.0
@@ -10565,7 +10579,7 @@ packages:
     engines: {node: '>=12.0.0'}
     dependencies:
       axios: 1.10.0
-      form-data: 4.0.3
+      form-data: 4.0.4
       hamming-distance: 1.0.0
       lodash: 4.17.21
       tslib: 2.8.1
@@ -12094,16 +12108,16 @@ packages:
     dependencies:
       yallist: 3.1.1
 
-  /lucide-react@0.294.0(react@19.0.0):
-    resolution: {integrity: sha512-V7o0/VECSGbLHn3/1O67FUgBwWB+hmzshrgDVRJQhMh8uj5D3HBuIvhuAmQTtlupILSplwIZg5FTc4tTKMA2SA==}
+  /lucide-react@0.483.0(react@19.0.0):
+    resolution: {integrity: sha512-WldsY17Qb/T3VZdMnVQ9C3DDIP7h1ViDTHVdVGnLZcvHNg30zH/MTQ04RTORjexoGmpsXroiQXZ4QyR0kBy0FA==}
     peerDependencies:
-      react: ^16.5.1 || ^17.0.0 || ^18.0.0
+      react: ^16.5.1 || ^17.0.0 || ^18.0.0 || ^19.0.0
     dependencies:
       react: 19.0.0
     dev: false
 
-  /lucide-react@0.483.0(react@19.0.0):
-    resolution: {integrity: sha512-WldsY17Qb/T3VZdMnVQ9C3DDIP7h1ViDTHVdVGnLZcvHNg30zH/MTQ04RTORjexoGmpsXroiQXZ4QyR0kBy0FA==}
+  /lucide-react@0.525.0(react@19.0.0):
+    resolution: {integrity: sha512-Tm1txJ2OkymCGkvwoHt33Y2JpN5xucVq1slHcgE6Lk0WjDfjgKWor5CdVER8U6DvcfMwh4M8XxmpTiyzfmfDYQ==}
     peerDependencies:
       react: ^16.5.1 || ^17.0.0 || ^18.0.0 || ^19.0.0
     dependencies:
@@ -12281,15 +12295,15 @@ packages:
     engines: {node: '>=16 || 14 >=14.17'}
     dev: true
 
-  /morgan@1.10.0:
-    resolution: {integrity: sha512-AbegBVI4sh6El+1gNwvD5YIck7nSA36weD7xvIxG4in80j/UoK8AEGaWnnz8v1GxonMCltmlNs5ZKbGvl9b1XQ==}
+  /morgan@1.10.1:
+    resolution: {integrity: sha512-223dMRJtI/l25dJKWpgij2cMtywuG/WiUKXdvwfbhGKBhy1puASqXwFzmWZ7+K73vUPoR7SS2Qz2cI/g9MKw0A==}
     engines: {node: '>= 0.8.0'}
     dependencies:
       basic-auth: 2.0.1
       debug: 2.6.9
       depd: 2.0.0
       on-finished: 2.3.0
-      on-headers: 1.0.2
+      on-headers: 1.1.0
     transitivePeerDependencies:
       - supports-color
     dev: false
@@ -12700,8 +12714,8 @@ packages:
     dependencies:
       ee-first: 1.1.1
 
-  /on-headers@1.0.2:
-    resolution: {integrity: sha512-pZAE+FJLoyITytdqK0U5s+FIpjN0JP3OzFi/u8Rx+EV5/W+JTWGXG8xFzevE7AjBfDqHv/8vL8qQsIhHnqRkrA==}
+  /on-headers@1.1.0:
+    resolution: {integrity: sha512-737ZY3yNnXy37FHkQxPzt4UZ2UWPWiCZWLvFZ4fu5cueciegX0zGPnrlY6bwRg4FdQOe9YU8MkmJwGhoMybl8A==}
     engines: {node: '>= 0.8'}
 
   /once@1.4.0:
@@ -14370,7 +14384,7 @@ packages:
     engines: {node: '>=16.0.0'}
     hasBin: true
     dependencies:
-      '@bufbuild/protobuf': 2.6.0
+      '@bufbuild/protobuf': 2.6.1
       buffer-builder: 0.2.0
       colorjs.io: 0.5.2
       immutable: 5.1.3
@@ -15332,8 +15346,8 @@ packages:
       json5: 2.2.3
     dev: false
 
-  /swagger-ui-dist@5.26.2:
-    resolution: {integrity: sha512-WmMS9iMlHQejNm/Uw5ZTo4e3M2QMmEavRz7WLWVsq7Mlx4PSHJbY+VCrLsAz9wLxyHVgrJdt7N8+SdQLa52Ykg==}
+  /swagger-ui-dist@5.27.0:
+    resolution: {integrity: sha512-tS6LRyBhY6yAqxrfsA9IYpGWPUJOri6sclySa7TdC7XQfGLvTwDY531KLgfQwHEtQsn+sT4JlUspbeQDBVGWig==}
     dependencies:
       '@scarf/scarf': 1.4.0
     dev: false
@@ -15345,7 +15359,7 @@ packages:
       express: '>=4.0.0 || >=5.0.0-beta'
     dependencies:
       express: 4.21.2
-      swagger-ui-dist: 5.26.2
+      swagger-ui-dist: 5.27.0
     dev: false
 
   /sync-child-process@1.0.2:
@@ -16142,7 +16156,7 @@ packages:
       bonjour-service: 1.3.0
       chokidar: 3.6.0
       colorette: 2.0.20
-      compression: 1.8.0
+      compression: 1.8.1
       connect-history-api-fallback: 2.0.0
       express: 4.21.2
       graceful-fs: 4.2.11

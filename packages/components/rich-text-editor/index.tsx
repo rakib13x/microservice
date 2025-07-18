@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import "react-quill-new/dist/quill.snow.css";
+// @ts-ignore
 import ReactQuill from "react-quill-new";
 
 const RichTextEditor = ({

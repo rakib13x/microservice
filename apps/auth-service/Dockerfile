@@ -16,9 +16,9 @@ COPY packages/middleware ./packages/middleware
 COPY packages/utils/logs ./packages/utils/logs
 COPY prisma ./prisma
 
-# Enable pnpm and install dependencies (remove --frozen-lockfile to handle version conflicts)
+# Enable pnpm and install only production dependencies
 RUN corepack enable && corepack prepare pnpm@latest --activate
-RUN pnpm install --prod
+RUN pnpm install --prod --frozen-lockfile
 
 # Generate Prisma client
 RUN npx prisma generate

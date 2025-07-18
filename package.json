@@ -5,6 +5,10 @@
   "scripts": {
     "dev": "npx nx run-many --target=serve --all --maxParallel=10",
     "user-ui": "npx nx run-many --target=dev --all --projects=user-ui",
+    "seller-ui": "npx nx run-many --target=dev --all --projects=seller-ui",
+    "admin-ui": "npx nx run-many --target=dev --all --projects=admin-ui",
+    "kafka:up": "docker compose -f docker-compose.production.yml up kafka zookeeper -d",
+    "kafka:down": "docker compose -f docker-compose.production.yml stop kafka zookeeper -d",
     "build": "npx nx run-many --target=build --all --parallel=3",
     "start:prod": "npx nx run-many --target=serve --projects=auth-service,product-service,order-service,seller-service,admin-service,api-gateway,kafka-service,logger-service,chatting-service,recommendation-service --parallel=10 & npm run ui:prod",
     "ui:prod": "npm run user-ui:prod & npm run seller-ui:prod & npm run admin-ui:prod",
@@ -55,8 +59,5 @@
     "tslib": "^2.3.0",
     "typescript": "~5.7.2",
     "webpack-cli": "^5.1.4"
-  },
-  "workspaces": [
-    "apps/*"
-  ]
+  }
 }

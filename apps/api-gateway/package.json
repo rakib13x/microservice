@@ -22,7 +22,7 @@
     "@types/cookie-parser": "^1.4.3",
     "@types/node": "^20.0.0",
     "@types/morgan": "^1.9.4",
-    "prisma": "^6.7.0"
+    "prisma": "^5.0.0"
   },
   "scripts": {
     "build": "tsc",
