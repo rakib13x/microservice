@@ -13,18 +13,34 @@ env:
   DOCKER_PASSWORD: ${{ secrets.DOCKERHUB_TOKEN }}
 
 jobs:
-  # Build all backend services
-  build-backend:
+  # Build backend services FIRST (excluding api-gateway)
+  build-backend-services:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        service: [api-gateway, auth-service, product-service, order-service, seller-service, admin-service, chatting-service, kafka-service, logger-service, recommendation-service]
+        service: [auth-service, product-service, order-service, seller-service, admin-service, chatting-service, kafka-service, logger-service, recommendation-service]
       fail-fast: false
       max-parallel: 3
     
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'pnpm'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: latest
+
+      - name: Install dependencies and build
+        run: |
+          pnpm install
+          pnpm run build
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -35,24 +51,53 @@ jobs:
           username: ${{ env.DOCKER_USERNAME }}
           password: ${{ env.DOCKER_PASSWORD }}
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-          cache: 'npm'
-      
-      - name: Install dependencies and build
-        run: |
-          npm install -g pnpm
-          pnpm install
-          pnpm run build
-      
       - name: Build and push Docker image
         run: |
           # Build from ROOT directory with correct context - just like local-production.sh!
           docker build -t ${{ env.DOCKER_USERNAME }}/${{ matrix.service }}:latest -f apps/${{ matrix.service }}/Dockerfile .
           docker push ${{ env.DOCKER_USERNAME }}/${{ matrix.service }}:latest
           echo "✅ ${{ matrix.service }} built and pushed successfully"
+
+  # Build API Gateway LAST (after all backend services)
+  build-api-gateway:
+    needs: [build-backend-services]
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'pnpm'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: latest
+
+      - name: Install dependencies and build
+        run: |
+          pnpm install
+          pnpm run build
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ env.DOCKER_USERNAME }}
+          password: ${{ env.DOCKER_PASSWORD }}
+
+      - name: Build and push API Gateway
+        run: |
+          # Build API Gateway LAST - it's the proxy for all other services
+          docker build -t ${{ env.DOCKER_USERNAME }}/api-gateway:latest -f apps/api-gateway/Dockerfile .
+          docker push ${{ env.DOCKER_USERNAME }}/api-gateway:latest
+          echo "✅ API Gateway built and pushed successfully (LAST)"
 
   # Build all frontend services
   build-frontend:
@@ -66,6 +111,22 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'pnpm'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: latest
+
+      - name: Install dependencies and build
+        run: |
+          pnpm install
+          pnpm run build
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -85,7 +146,7 @@ jobs:
 
   # Deploy to EC2
   deploy-to-ec2:
-    needs: [build-backend, build-frontend]
+    needs: [build-backend-services, build-api-gateway, build-frontend]
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/master' && github.event_name == 'push'
     
@@ -109,7 +170,7 @@ jobs:
             
             # Set environment variables for deployment script
             export DOCKER_USERNAME="${{ secrets.DOCKERHUB_USERNAME }}"
-            export CHANGED_BACKEND='["api-gateway","auth-service","product-service","order-service","seller-service","admin-service","chatting-service","kafka-service","logger-service","recommendation-service"]'
+            export CHANGED_BACKEND='["auth-service","product-service","order-service","seller-service","admin-service","chatting-service","kafka-service","logger-service","recommendation-service","api-gateway"]'
             export CHANGED_FRONTEND='["user-ui","seller-ui","admin-ui"]'
             
             # Make script executable and run deployment
@@ -118,7 +179,7 @@ jobs:
 
   # Optional: Deploy notification
   notify-completion:
-    needs: [build-backend, build-frontend, deploy-to-ec2]
+    needs: [build-backend-services, build-api-gateway, build-frontend, deploy-to-ec2]
     runs-on: ubuntu-latest
     if: always()
     
@@ -126,6 +187,7 @@ jobs:
       - name: Build & Deploy Summary
         run: |
           echo "🎉 Build and deployment completed!"
-          echo "Backend status: ${{ needs.build-backend.result }}"
+          echo "Backend services status: ${{ needs.build-backend-services.result }}"
+          echo "API Gateway status: ${{ needs.build-api-gateway.result }}"
           echo "Frontend status: ${{ needs.build-frontend.result }}"
           echo "Deployment status: ${{ needs.deploy-to-ec2.result }}"
