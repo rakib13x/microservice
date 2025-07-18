@@ -103,20 +103,48 @@ jobs:
           CHANGED_BACKEND='[]'
           CHANGED_FRONTEND='[]'
           
-          for service in $BACKEND_SERVICES; do
-            if [[ "${{ steps.changes.outputs.changes }}" == *"$service"* ]]; then
-              CHANGED_BACKEND=$(echo $CHANGED_BACKEND | jq ". + [\"$service\"]")
-            fi
-          done
+          # Check each backend service individually
+          if [[ "${{ steps.changes.outputs.auth-service }}" == "true" ]]; then
+            CHANGED_BACKEND=$(echo $CHANGED_BACKEND | jq ". + [\"auth-service\"]")
+          fi
+          if [[ "${{ steps.changes.outputs.product-service }}" == "true" ]]; then
+            CHANGED_BACKEND=$(echo $CHANGED_BACKEND | jq ". + [\"product-service\"]")
+          fi
+          if [[ "${{ steps.changes.outputs.order-service }}" == "true" ]]; then
+            CHANGED_BACKEND=$(echo $CHANGED_BACKEND | jq ". + [\"order-service\"]")
+          fi
+          if [[ "${{ steps.changes.outputs.seller-service }}" == "true" ]]; then
+            CHANGED_BACKEND=$(echo $CHANGED_BACKEND | jq ". + [\"seller-service\"]")
+          fi
+          if [[ "${{ steps.changes.outputs.admin-service }}" == "true" ]]; then
+            CHANGED_BACKEND=$(echo $CHANGED_BACKEND | jq ". + [\"admin-service\"]")
+          fi
+          if [[ "${{ steps.changes.outputs.chatting-service }}" == "true" ]]; then
+            CHANGED_BACKEND=$(echo $CHANGED_BACKEND | jq ". + [\"chatting-service\"]")
+          fi
+          if [[ "${{ steps.changes.outputs.kafka-service }}" == "true" ]]; then
+            CHANGED_BACKEND=$(echo $CHANGED_BACKEND | jq ". + [\"kafka-service\"]")
+          fi
+          if [[ "${{ steps.changes.outputs.logger-service }}" == "true" ]]; then
+            CHANGED_BACKEND=$(echo $CHANGED_BACKEND | jq ". + [\"logger-service\"]")
+          fi
+          if [[ "${{ steps.changes.outputs.recommendation-service }}" == "true" ]]; then
+            CHANGED_BACKEND=$(echo $CHANGED_BACKEND | jq ". + [\"recommendation-service\"]")
+          fi
           
-          for service in $FRONTEND_SERVICES; do
-            if [[ "${{ steps.changes.outputs.changes }}" == *"$service"* ]]; then
-              CHANGED_FRONTEND=$(echo $CHANGED_FRONTEND | jq ". + [\"$service\"]")
-            fi
-          done
+          # Check each frontend service individually
+          if [[ "${{ steps.changes.outputs.user-ui }}" == "true" ]]; then
+            CHANGED_FRONTEND=$(echo $CHANGED_FRONTEND | jq ". + [\"user-ui\"]")
+          fi
+          if [[ "${{ steps.changes.outputs.seller-ui }}" == "true" ]]; then
+            CHANGED_FRONTEND=$(echo $CHANGED_FRONTEND | jq ". + [\"seller-ui\"]")
+          fi
+          if [[ "${{ steps.changes.outputs.admin-ui }}" == "true" ]]; then
+            CHANGED_FRONTEND=$(echo $CHANGED_FRONTEND | jq ". + [\"admin-ui\"]")
+          fi
           
-          # Add api-gateway if any backend service changed
-          if [[ "$CHANGED_BACKEND" != "[]" ]] || [[ "${{ steps.changes.outputs.changes }}" == *"api-gateway"* ]]; then
+          # Add api-gateway if any backend service changed or api-gateway itself changed
+          if [[ "$CHANGED_BACKEND" != "[]" ]] || [[ "${{ steps.changes.outputs.api-gateway }}" == "true" ]]; then
             CHANGED_BACKEND=$(echo $CHANGED_BACKEND | jq ". + [\"api-gateway\"]")
           fi
           
