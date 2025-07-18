@@ -16,7 +16,7 @@ COPY packages/utils/logs ./packages/utils/logs
 COPY prisma ./prisma
 
 # Install pnpm and dependencies
-RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN corepack enable && corepack prepare pnpm@8.10.2 --activate
 RUN pnpm install --prod
 
 # Generate Prisma client

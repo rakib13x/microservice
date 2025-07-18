@@ -17,7 +17,7 @@ COPY packages/utils/logs ./packages/utils/logs
 COPY prisma ./prisma
 
 # Enable pnpm and install only production dependencies
-RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN corepack enable && corepack prepare pnpm@8.10.2 --activate
 RUN pnpm install --prod --frozen-lockfile
 
 # Generate Prisma client

@@ -12,7 +12,7 @@ COPY prisma ./prisma
 COPY packages/utils/kafka ./packages/utils/kafka
 COPY packages/libs/prisma ./packages/libs/prisma
 
-RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN corepack enable && corepack prepare pnpm@8.10.2 --activate
 RUN pnpm install --prod
 
 RUN npx prisma generate
