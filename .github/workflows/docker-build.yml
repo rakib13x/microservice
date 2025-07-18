@@ -35,6 +35,18 @@ jobs:
           username: ${{ env.DOCKER_USERNAME }}
           password: ${{ env.DOCKER_PASSWORD }}
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+      
+      - name: Install dependencies and build
+        run: |
+          npm install -g pnpm
+          pnpm install
+          pnpm run build
+      
       - name: Build and push Docker image
         run: |
           # Build from ROOT directory with correct context - just like local-production.sh!
