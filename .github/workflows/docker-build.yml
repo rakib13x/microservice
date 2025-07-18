@@ -91,21 +91,25 @@ jobs:
       - name: Set service groups
         id: groups
         run: |
-          # Backend services (excluding api-gateway)
-          BACKEND_SERVICES='["auth-service","product-service","order-service","seller-service","admin-service","chatting-service","kafka-service","logger-service","recommendation-service"]'
-          FRONTEND_SERVICES='["user-ui","seller-ui","admin-ui"]'
+          # Define services as space-separated strings
+          BACKEND_SERVICES="auth-service product-service order-service seller-service admin-service chatting-service kafka-service logger-service recommendation-service"
+          FRONTEND_SERVICES="user-ui seller-ui admin-ui"
           
-          # Check which backend services changed
+          # Convert to JSON arrays
+          BACKEND_JSON=$(echo $BACKEND_SERVICES | jq -R 'split(" ")')
+          FRONTEND_JSON=$(echo $FRONTEND_SERVICES | jq -R 'split(" ")')
+          
+          # Check which services changed
           CHANGED_BACKEND='[]'
           CHANGED_FRONTEND='[]'
           
-          for service in $(echo $BACKEND_SERVICES | jq -r '.[]'); do
+          for service in $BACKEND_SERVICES; do
             if [[ "${{ steps.changes.outputs.changes }}" == *"$service"* ]]; then
               CHANGED_BACKEND=$(echo $CHANGED_BACKEND | jq ". + [\"$service\"]")
             fi
           done
           
-          for service in $(echo $FRONTEND_SERVICES | jq -r '.[]'); do
+          for service in $FRONTEND_SERVICES; do
             if [[ "${{ steps.changes.outputs.changes }}" == *"$service"* ]]; then
               CHANGED_FRONTEND=$(echo $CHANGED_FRONTEND | jq ". + [\"$service\"]")
             fi
