@@ -9,10 +9,10 @@ importers:
   .:
     dependencies:
       '@prisma/client':
-        specifier: 6.11.1
-        version: 6.11.1(prisma@6.12.0)(typescript@5.7.3)
+        specifier: ^6.7.0
+        version: 6.12.0(prisma@6.12.0)(typescript@5.7.3)
       prisma:
-        specifier: ^6.11.1
+        specifier: ^6.7.0
         version: 6.12.0(typescript@5.7.3)
       tsconfig-paths:
         specifier: ^4.2.0
@@ -113,7 +113,7 @@ importers:
     dependencies:
       '@prisma/client':
         specifier: ^6.7.0
-        version: 6.11.1(prisma@6.12.0)(typescript@5.7.3)
+        version: 6.12.0(prisma@6.12.0)(typescript@5.7.3)
       cookie-parser:
         specifier: ^1.4.6
         version: 1.4.7
@@ -244,7 +244,7 @@ importers:
     dependencies:
       '@prisma/client':
         specifier: ^6.7.0
-        version: 6.11.1(prisma@5.22.0)(typescript@5.7.3)
+        version: 6.12.0(prisma@5.22.0)(typescript@5.7.3)
       cookie-parser:
         specifier: ^1.4.6
         version: 1.4.7
@@ -299,7 +299,7 @@ importers:
     dependencies:
       '@prisma/client':
         specifier: ^6.7.0
-        version: 6.11.1(prisma@6.12.0)(typescript@5.7.3)
+        version: 6.12.0(prisma@6.12.0)(typescript@5.7.3)
       bcryptjs:
         specifier: ^2.4.3
         version: 2.4.3
@@ -389,7 +389,7 @@ importers:
         version: link:../../packages/libs/prisma
       '@prisma/client':
         specifier: ^6.7.0
-        version: 6.11.1(prisma@6.12.0)(typescript@5.7.3)
+        version: 6.12.0(prisma@6.12.0)(typescript@5.7.3)
       cookie-parser:
         specifier: ^1.4.6
         version: 1.4.7
@@ -450,7 +450,7 @@ importers:
     dependencies:
       '@prisma/client':
         specifier: ^6.7.0
-        version: 6.11.1(prisma@6.12.0)(typescript@5.7.3)
+        version: 6.12.0(prisma@6.12.0)(typescript@5.7.3)
       kafkajs:
         specifier: ^2.2.4
         version: 2.2.4
@@ -477,8 +477,8 @@ importers:
         specifier: workspace:*
         version: link:../../packages/utils/kafka
       '@prisma/client':
-        specifier: ^5.0.0
-        version: 5.22.0(prisma@5.22.0)
+        specifier: ^6.7.0
+        version: 6.12.0(prisma@6.12.0)(typescript@5.7.3)
       cookie-parser:
         specifier: ^1.4.6
         version: 1.4.7
@@ -532,8 +532,8 @@ importers:
         specifier: ^8.5.0
         version: 8.18.1
       prisma:
-        specifier: ^5.0.0
-        version: 5.22.0
+        specifier: ^6.7.0
+        version: 6.12.0(typescript@5.7.3)
 
   apps/order-service:
     dependencies:
@@ -545,7 +545,7 @@ importers:
         version: link:../../packages/libs/prisma
       '@prisma/client':
         specifier: ^6.7.0
-        version: 6.11.1(prisma@6.12.0)(typescript@5.7.3)
+        version: 6.12.0(prisma@6.12.0)(typescript@5.7.3)
       body-parser:
         specifier: ^1.20.0
         version: 1.20.3
@@ -615,7 +615,7 @@ importers:
     dependencies:
       '@prisma/client':
         specifier: ^6.7.0
-        version: 6.11.1(prisma@6.12.0)(typescript@5.7.3)
+        version: 6.12.0(prisma@6.12.0)(typescript@5.7.3)
       cookie-parser:
         specifier: ^1.4.6
         version: 1.4.7
@@ -703,7 +703,7 @@ importers:
         version: link:../../packages/libs/prisma
       '@prisma/client':
         specifier: ^6.7.0
-        version: 6.11.1(prisma@6.12.0)(typescript@5.7.3)
+        version: 6.12.0(prisma@6.12.0)(typescript@5.7.3)
       '@tensorflow/tfjs':
         specifier: ^4.15.0
         version: 4.22.0(seedrandom@3.0.5)
@@ -770,7 +770,7 @@ importers:
         version: link:../../packages/libs/redis
       '@prisma/client':
         specifier: ^6.7.0
-        version: 6.11.1(prisma@6.12.0)(typescript@5.7.3)
+        version: 6.12.0(prisma@6.12.0)(typescript@5.7.3)
       bcryptjs:
         specifier: ^2.4.3
         version: 2.4.3
@@ -852,7 +852,7 @@ importers:
         version: link:../../packages/components
       '@prisma/client':
         specifier: ^6.11.1
-        version: 6.11.1(prisma@6.12.0)(typescript@5.7.3)
+        version: 6.12.0(prisma@6.12.0)(typescript@5.7.3)
       '@stripe/react-stripe-js':
         specifier: ^3.6.0
         version: 3.7.0(@stripe/stripe-js@7.5.0)(react-dom@19.0.0)(react@19.0.0)
@@ -973,7 +973,7 @@ importers:
         version: link:../../packages/components
       '@prisma/client':
         specifier: ^6.11.1
-        version: 6.11.1(prisma@6.12.0)(typescript@5.7.3)
+        version: 6.12.0(prisma@6.12.0)(typescript@5.7.3)
       '@stripe/react-stripe-js':
         specifier: ^3.6.0
         version: 3.7.0(@stripe/stripe-js@7.5.0)(react-dom@19.0.0)(react@19.0.0)
@@ -1138,7 +1138,7 @@ importers:
     dependencies:
       '@prisma/client':
         specifier: ^6.11.1
-        version: 6.11.1(prisma@6.12.0)(typescript@5.7.3)
+        version: 6.12.0(prisma@6.12.0)(typescript@5.7.3)
 
   packages/libs/redis:
     dependencies:
@@ -1150,7 +1150,7 @@ importers:
     dependencies:
       '@prisma/client':
         specifier: ^6.11.1
-        version: 6.11.1(prisma@6.12.0)(typescript@5.7.3)
+        version: 6.12.0(prisma@6.12.0)(typescript@5.7.3)
       cookie-parser:
         specifier: ^1.4.6
         version: 1.4.7
@@ -5112,21 +5112,8 @@ packages:
     dev: true
     optional: true
 
-  /@prisma/client@5.22.0(prisma@5.22.0):
-    resolution: {integrity: sha512-M0SVXfyHnQREBKxCgyo7sffrKttwE6R8PMq330MIUF0pTwjUhLbW84pFDlf06B27XyCR++VtjugEnIHdr07SVA==}
-    engines: {node: '>=16.13'}
-    requiresBuild: true
-    peerDependencies:
-      prisma: '*'
-    peerDependenciesMeta:
-      prisma:
-        optional: true
-    dependencies:
-      prisma: 5.22.0
-    dev: false
-
-  /@prisma/client@6.11.1(prisma@5.22.0)(typescript@5.7.3):
-    resolution: {integrity: sha512-5CLFh8QP6KxRm83pJ84jaVCeSVPQr8k0L2SEtOJHwdkS57/VQDcI/wQpGmdyOZi+D9gdNabdo8tj1Uk+w+upsQ==}
+  /@prisma/client@6.12.0(prisma@5.22.0)(typescript@5.7.3):
+    resolution: {integrity: sha512-wn98bJ3Cj6edlF4jjpgXwbnQIo/fQLqqQHPk2POrZPxTlhY3+n90SSIF3LMRVa8VzRFC/Gec3YKJRxRu+AIGVA==}
     engines: {node: '>=18.18'}
     requiresBuild: true
     peerDependencies:
@@ -5142,8 +5129,8 @@ packages:
       typescript: 5.7.3
     dev: false
 
-  /@prisma/client@6.11.1(prisma@6.12.0)(typescript@5.7.3):
-    resolution: {integrity: sha512-5CLFh8QP6KxRm83pJ84jaVCeSVPQr8k0L2SEtOJHwdkS57/VQDcI/wQpGmdyOZi+D9gdNabdo8tj1Uk+w+upsQ==}
+  /@prisma/client@6.12.0(prisma@6.12.0)(typescript@5.7.3):
+    resolution: {integrity: sha512-wn98bJ3Cj6edlF4jjpgXwbnQIo/fQLqqQHPk2POrZPxTlhY3+n90SSIF3LMRVa8VzRFC/Gec3YKJRxRu+AIGVA==}
     engines: {node: '>=18.18'}
     requiresBuild: true
     peerDependencies:

@@ -24,8 +24,8 @@
   },
   "private": true,
   "dependencies": {
-    "@prisma/client": "6.11.1",
-    "prisma": "^6.11.1",
+    "@prisma/client": "^6.7.0",
+    "prisma": "^6.7.0",
     "tsconfig-paths": "^4.2.0"
   },
   "devDependencies": {
