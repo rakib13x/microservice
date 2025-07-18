@@ -23,18 +23,18 @@ jobs:
       - name: Setup pnpm
         uses: pnpm/action-setup@v2
         with:
-          version: latest
+          version: 8.10.2
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "18"
-          cache: "pnpm"
+          node-version: '18'
+          cache: 'pnpm'
 
       - name: Install root dependencies
         run: |
           pnpm install --frozen-lockfile
-
+          
       - name: Generate Prisma Client
         run: |
           npx prisma generate
@@ -55,21 +55,10 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        service:
-          [
-            auth-service,
-            product-service,
-            order-service,
-            seller-service,
-            admin-service,
-            chatting-service,
-            kafka-service,
-            logger-service,
-            recommendation-service,
-          ]
+        service: [auth-service, product-service, order-service, seller-service, admin-service, chatting-service, kafka-service, logger-service, recommendation-service]
       fail-fast: false
       max-parallel: 3
-
+    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -77,12 +66,12 @@ jobs:
       - name: Setup pnpm
         uses: pnpm/action-setup@v2
         with:
-          version: latest
+          version: 8.10.2
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "18"
+          node-version: '18'
 
       - name: Restore cached dependencies
         uses: actions/cache/restore@v3
@@ -119,7 +108,7 @@ jobs:
   build-api-gateway:
     needs: [install-dependencies, build-backend-services]
     runs-on: ubuntu-latest
-
+    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -132,7 +121,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "18"
+          node-version: '18'
 
       - name: Restore cached dependencies
         uses: actions/cache/restore@v3
@@ -174,7 +163,7 @@ jobs:
         service: [user-ui, seller-ui, admin-ui]
       fail-fast: false
       max-parallel: 2
-
+    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -187,7 +176,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "18"
+          node-version: '18'
 
       - name: Restore cached dependencies
         uses: actions/cache/restore@v3
@@ -225,7 +214,7 @@ jobs:
     needs: [build-backend-services, build-api-gateway, build-frontend]
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/master' && github.event_name == 'push'
-
+    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -240,26 +229,25 @@ jobs:
           script: |
             # Navigate to app directory
             cd /home/ec2-user/eshop
-
+            
             # Pull latest code
             git pull origin master
-
+            
             # Set environment variables for deployment script
             export DOCKER_USERNAME="${{ secrets.DOCKERHUB_USERNAME }}"
             export CHANGED_BACKEND='["auth-service","product-service","order-service","seller-service","admin-service","chatting-service","kafka-service","logger-service","recommendation-service","api-gateway"]'
             export CHANGED_FRONTEND='["user-ui","seller-ui","admin-ui"]'
-
+            
             # Make script executable and run deployment
             chmod +x scripts/deploy-production.sh
             ./scripts/deploy-production.sh
 
   # Optional: Deploy notification
   notify-completion:
-    needs:
-      [build-backend-services, build-api-gateway, build-frontend, deploy-to-ec2]
+    needs: [build-backend-services, build-api-gateway, build-frontend, deploy-to-ec2]
     runs-on: ubuntu-latest
     if: always()
-
+    
     steps:
       - name: Build & Deploy Summary
         run: |
