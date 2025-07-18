@@ -18,7 +18,7 @@ COPY prisma ./prisma
 
 # Enable pnpm and install only production dependencies
 RUN corepack enable && corepack prepare pnpm@8.10.2 --activate
-RUN pnpm install --prod --frozen-lockfile
+RUN pnpm install --prod
 
 # Generate Prisma client
 RUN npx prisma generate
