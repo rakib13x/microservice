@@ -5,6 +5,13 @@ on:
     branches: [master, develop]
   pull_request:
     branches: [master]
+  workflow_dispatch:
+    inputs:
+      force_build_all:
+        description: 'Force build all services'
+        required: false
+        default: 'false'
+        type: boolean
 
 env:
   DOCKER_REGISTRY: docker.io
@@ -95,64 +102,66 @@ jobs:
           BACKEND_SERVICES="auth-service product-service order-service seller-service admin-service chatting-service kafka-service logger-service recommendation-service"
           FRONTEND_SERVICES="user-ui seller-ui admin-ui"
           
-          # Convert to JSON arrays
-          BACKEND_JSON=$(echo $BACKEND_SERVICES | jq -R 'split(" ")')
-          FRONTEND_JSON=$(echo $FRONTEND_SERVICES | jq -R 'split(" ")')
-          
-          # Check which services changed
-          CHANGED_BACKEND='[]'
-          CHANGED_FRONTEND='[]'
-          
-          # Check each backend service individually
-          if [[ "${{ steps.changes.outputs.auth-service }}" == "true" ]]; then
-            CHANGED_BACKEND=$(echo $CHANGED_BACKEND | jq ". + [\"auth-service\"]")
-          fi
-          if [[ "${{ steps.changes.outputs.product-service }}" == "true" ]]; then
-            CHANGED_BACKEND=$(echo $CHANGED_BACKEND | jq ". + [\"product-service\"]")
-          fi
-          if [[ "${{ steps.changes.outputs.order-service }}" == "true" ]]; then
-            CHANGED_BACKEND=$(echo $CHANGED_BACKEND | jq ". + [\"order-service\"]")
-          fi
-          if [[ "${{ steps.changes.outputs.seller-service }}" == "true" ]]; then
-            CHANGED_BACKEND=$(echo $CHANGED_BACKEND | jq ". + [\"seller-service\"]")
-          fi
-          if [[ "${{ steps.changes.outputs.admin-service }}" == "true" ]]; then
-            CHANGED_BACKEND=$(echo $CHANGED_BACKEND | jq ". + [\"admin-service\"]")
-          fi
-          if [[ "${{ steps.changes.outputs.chatting-service }}" == "true" ]]; then
-            CHANGED_BACKEND=$(echo $CHANGED_BACKEND | jq ". + [\"chatting-service\"]")
-          fi
-          if [[ "${{ steps.changes.outputs.kafka-service }}" == "true" ]]; then
-            CHANGED_BACKEND=$(echo $CHANGED_BACKEND | jq ". + [\"kafka-service\"]")
-          fi
-          if [[ "${{ steps.changes.outputs.logger-service }}" == "true" ]]; then
-            CHANGED_BACKEND=$(echo $CHANGED_BACKEND | jq ". + [\"logger-service\"]")
-          fi
-          if [[ "${{ steps.changes.outputs.recommendation-service }}" == "true" ]]; then
-            CHANGED_BACKEND=$(echo $CHANGED_BACKEND | jq ". + [\"recommendation-service\"]")
-          fi
-          
-          # Check each frontend service individually
-          if [[ "${{ steps.changes.outputs.user-ui }}" == "true" ]]; then
-            CHANGED_FRONTEND=$(echo $CHANGED_FRONTEND | jq ". + [\"user-ui\"]")
-          fi
-          if [[ "${{ steps.changes.outputs.seller-ui }}" == "true" ]]; then
-            CHANGED_FRONTEND=$(echo $CHANGED_FRONTEND | jq ". + [\"seller-ui\"]")
-          fi
-          if [[ "${{ steps.changes.outputs.admin-ui }}" == "true" ]]; then
-            CHANGED_FRONTEND=$(echo $CHANGED_FRONTEND | jq ". + [\"admin-ui\"]")
-          fi
-          
-          # Add api-gateway if any backend service changed or api-gateway itself changed
-          if [[ "$CHANGED_BACKEND" != "[]" ]] || [[ "${{ steps.changes.outputs.api-gateway }}" == "true" ]]; then
-            CHANGED_BACKEND=$(echo $CHANGED_BACKEND | jq ". + [\"api-gateway\"]")
-          fi
-          
-          echo "backend-services=$CHANGED_BACKEND" >> $GITHUB_OUTPUT
-          echo "frontend-services=$CHANGED_FRONTEND" >> $GITHUB_OUTPUT
-          echo "any-backend-changed=$([ "$CHANGED_BACKEND" != "[]" ] && echo true || echo false)" >> $GITHUB_OUTPUT
-          echo "any-frontend-changed=$([ "$CHANGED_FRONTEND" != "[]" ] && echo true || echo false)" >> $GITHUB_OUTPUT
-          echo "any-changed=$([ "$CHANGED_BACKEND" != "[]" ] || [ "$CHANGED_FRONTEND" != "[]" ] && echo true || echo false)" >> $GITHUB_OUTPUT
+          # Check if force build all is enabled
+          if [[ "${{ github.event.inputs.force_build_all }}" == "true" ]]; then
+            echo "🔨 Force building all services"
+            CHANGED_BACKEND='["auth-service","product-service","order-service","seller-service","admin-service","chatting-service","kafka-service","logger-service","recommendation-service","api-gateway"]'
+            CHANGED_FRONTEND='["user-ui","seller-ui","admin-ui"]'
+          else
+            # Check which services changed
+            CHANGED_BACKEND='[]'
+            CHANGED_FRONTEND='[]'
+            
+            # Check each backend service individually
+            if [[ "${{ steps.changes.outputs.auth-service }}" == "true" ]]; then
+              CHANGED_BACKEND=$(echo $CHANGED_BACKEND | jq ". + [\"auth-service\"]")
+            fi
+            if [[ "${{ steps.changes.outputs.product-service }}" == "true" ]]; then
+              CHANGED_BACKEND=$(echo $CHANGED_BACKEND | jq ". + [\"product-service\"]")
+            fi
+            if [[ "${{ steps.changes.outputs.order-service }}" == "true" ]]; then
+              CHANGED_BACKEND=$(echo $CHANGED_BACKEND | jq ". + [\"order-service\"]")
+            fi
+            if [[ "${{ steps.changes.outputs.seller-service }}" == "true" ]]; then
+              CHANGED_BACKEND=$(echo $CHANGED_BACKEND | jq ". + [\"seller-service\"]")
+            fi
+            if [[ "${{ steps.changes.outputs.admin-service }}" == "true" ]]; then
+              CHANGED_BACKEND=$(echo $CHANGED_BACKEND | jq ". + [\"admin-service\"]")
+            fi
+            if [[ "${{ steps.changes.outputs.chatting-service }}" == "true" ]]; then
+              CHANGED_BACKEND=$(echo $CHANGED_BACKEND | jq ". + [\"chatting-service\"]")
+            fi
+            if [[ "${{ steps.changes.outputs.kafka-service }}" == "true" ]]; then
+              CHANGED_BACKEND=$(echo $CHANGED_BACKEND | jq ". + [\"kafka-service\"]")
+            fi
+            if [[ "${{ steps.changes.outputs.logger-service }}" == "true" ]]; then
+              CHANGED_BACKEND=$(echo $CHANGED_BACKEND | jq ". + [\"logger-service\"]")
+            fi
+            if [[ "${{ steps.changes.outputs.recommendation-service }}" == "true" ]]; then
+              CHANGED_BACKEND=$(echo $CHANGED_BACKEND | jq ". + [\"recommendation-service\"]")
+            fi
+            
+            # Check each frontend service individually
+            if [[ "${{ steps.changes.outputs.user-ui }}" == "true" ]]; then
+              CHANGED_FRONTEND=$(echo $CHANGED_FRONTEND | jq ". + [\"user-ui\"]")
+            fi
+            if [[ "${{ steps.changes.outputs.seller-ui }}" == "true" ]]; then
+              CHANGED_FRONTEND=$(echo $CHANGED_FRONTEND | jq ". + [\"seller-ui\"]")
+            fi
+            if [[ "${{ steps.changes.outputs.admin-ui }}" == "true" ]]; then
+              CHANGED_FRONTEND=$(echo $CHANGED_FRONTEND | jq ". + [\"admin-ui\"]")
+            fi
+            
+            # Add api-gateway if any backend service changed or api-gateway itself changed
+            if [[ "$CHANGED_BACKEND" != "[]" ]] || [[ "${{ steps.changes.outputs.api-gateway }}" == "true" ]]; then
+              CHANGED_BACKEND=$(echo $CHANGED_BACKEND | jq ". + [\"api-gateway\"]")
+            fi
+            
+            echo "backend-services=$CHANGED_BACKEND" >> $GITHUB_OUTPUT
+            echo "frontend-services=$CHANGED_FRONTEND" >> $GITHUB_OUTPUT
+            echo "any-backend-changed=$([ "$CHANGED_BACKEND" != "[]" ] && echo true || echo false)" >> $GITHUB_OUTPUT
+            echo "any-frontend-changed=$([ "$CHANGED_FRONTEND" != "[]" ] && echo true || echo false)" >> $GITHUB_OUTPUT
+            echo "any-changed=$([ "$CHANGED_BACKEND" != "[]" ] || [ "$CHANGED_FRONTEND" != "[]" ] && echo true || echo false)" >> $GITHUB_OUTPUT
 
   # Step 2: Build Backend Services (Critical - Must All Succeed)
   build-backend-services:
