@@ -13,9 +13,10 @@ env:
   DOCKER_PASSWORD: ${{ secrets.DOCKERHUB_TOKEN }}
 
 jobs:
-  # Install dependencies once and cache them
-  install-dependencies:
+  # Build and push all Docker images
+  build-and-push-images:
     runs-on: ubuntu-latest
+    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -31,62 +32,29 @@ jobs:
           node-version: '18'
           cache: 'pnpm'
 
-      - name: Install root dependencies
+      - name: Create .npmrc for hoisting
         run: |
-          pnpm install --frozen-lockfile
+          echo "auto-install-peers=true" > .npmrc
+          echo "shamefully-hoist=true" >> .npmrc
+
+      - name: Install all dependencies
+        run: |
+          # Install all dependencies with hoisting
+          pnpm install
           
-      - name: Generate Prisma Client
-        run: |
+          # Generate Prisma Client
           npx prisma generate
+          
+          # Verify critical dependencies
+          echo "=== Verifying dependencies ==="
+          test -d "node_modules/ioredis" && echo "✓ ioredis found" || echo "✗ ioredis missing"
+          test -d "node_modules/kafkajs" && echo "✓ kafkajs found" || echo "✗ kafkajs missing"
+          test -d "node_modules/imagekit" && echo "✓ imagekit found" || echo "✗ imagekit missing"
 
-      - name: Cache node_modules
-        uses: actions/cache/save@v3
-        with:
-          path: |
-            node_modules
-            apps/*/node_modules
-            packages/*/node_modules
-            ~/.cache/ms-playwright
-          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
-
-  # Build backend services (excluding api-gateway)
-  build-backend-services:
-    needs: install-dependencies
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        service: [auth-service, product-service, order-service, seller-service, admin-service, chatting-service, kafka-service, logger-service, recommendation-service]
-      fail-fast: false
-      max-parallel: 3
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v2
-        with:
-          version: 8.10.2
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-
-      - name: Restore cached dependencies
-        uses: actions/cache/restore@v3
-        with:
-          path: |
-            node_modules
-            apps/*/node_modules
-            packages/*/node_modules
-            ~/.cache/ms-playwright
-          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
-
-      - name: Build specific service
+      - name: Build all services
         run: |
-          # Build only this specific service using nx
-          npx nx build ${{ matrix.service }}
+          # Build all services at once (like local-ci.sh does)
+          pnpm run build
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -97,121 +65,53 @@ jobs:
           username: ${{ env.DOCKER_USERNAME }}
           password: ${{ env.DOCKER_PASSWORD }}
 
-      - name: Build and push Docker image
+      - name: Build and push backend Docker images
         run: |
-          # Build from ROOT directory with correct context
-          docker build -t ${{ env.DOCKER_USERNAME }}/${{ matrix.service }}:latest -f apps/${{ matrix.service }}/Dockerfile .
-          docker push ${{ env.DOCKER_USERNAME }}/${{ matrix.service }}:latest
-          echo "✅ ${{ matrix.service }} built and pushed successfully"
-
-  # Build API Gateway LAST (after all backend services)
-  build-api-gateway:
-    needs: [install-dependencies, build-backend-services]
-    runs-on: ubuntu-latest
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v2
-        with:
-          version: latest
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-
-      - name: Restore cached dependencies
-        uses: actions/cache/restore@v3
-        with:
-          path: |
-            node_modules
-            apps/*/node_modules
-            packages/*/node_modules
-            ~/.cache/ms-playwright
-          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
-
-      - name: Build API Gateway
-        run: |
-          # Build only the API Gateway service
-          npx nx build api-gateway
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Login to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ env.DOCKER_USERNAME }}
-          password: ${{ env.DOCKER_PASSWORD }}
-
-      - name: Build and push API Gateway
-        run: |
-          # Build API Gateway LAST - it's the proxy for all other services
+          # Build and push each backend service
+          BACKEND_SERVICES=(
+            "auth-service"
+            "product-service"
+            "order-service"
+            "seller-service"
+            "admin-service"
+            "chatting-service"
+            "kafka-service"
+            "logger-service"
+            "recommendation-service"
+          )
+          
+          for service in "${BACKEND_SERVICES[@]}"; do
+            echo "Building $service..."
+            docker build -t ${{ env.DOCKER_USERNAME }}/$service:latest -f apps/$service/Dockerfile .
+            docker push ${{ env.DOCKER_USERNAME }}/$service:latest
+            echo "✅ $service built and pushed successfully"
+          done
+          
+          # Build API Gateway last
+          echo "Building api-gateway..."
           docker build -t ${{ env.DOCKER_USERNAME }}/api-gateway:latest -f apps/api-gateway/Dockerfile .
           docker push ${{ env.DOCKER_USERNAME }}/api-gateway:latest
-          echo "✅ API Gateway built and pushed successfully (LAST)"
+          echo "✅ api-gateway built and pushed successfully"
 
-  # Build all frontend services
-  build-frontend:
-    needs: install-dependencies
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        service: [user-ui, seller-ui, admin-ui]
-      fail-fast: false
-      max-parallel: 2
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v2
-        with:
-          version: latest
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-
-      - name: Restore cached dependencies
-        uses: actions/cache/restore@v3
-        with:
-          path: |
-            node_modules
-            apps/*/node_modules
-            packages/*/node_modules
-            ~/.cache/ms-playwright
-          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
-
-      - name: Build specific frontend service
+      - name: Build and push frontend Docker images
         run: |
-          # Build only this specific frontend service using nx
-          npx nx build ${{ matrix.service }}
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Login to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ env.DOCKER_USERNAME }}
-          password: ${{ env.DOCKER_PASSWORD }}
-
-      - name: Build and push Docker image
-        run: |
-          # Build from ROOT directory with correct context
-          docker build -t ${{ env.DOCKER_USERNAME }}/${{ matrix.service }}:latest -f apps/${{ matrix.service }}/Dockerfile .
-          docker push ${{ env.DOCKER_USERNAME }}/${{ matrix.service }}:latest
-          echo "✅ ${{ matrix.service }} built and pushed successfully"
+          # Build and push each frontend service
+          FRONTEND_SERVICES=(
+            "user-ui"
+            "seller-ui"
+            "admin-ui"
+          )
+          
+          for service in "${FRONTEND_SERVICES[@]}"; do
+            echo "Building $service..."
+            docker build -t ${{ env.DOCKER_USERNAME }}/$service:latest -f apps/$service/Dockerfile .
+            docker push ${{ env.DOCKER_USERNAME }}/$service:latest
+            echo "✅ $service built and pushed successfully"
+          done
 
   # Deploy to EC2
   deploy-to-ec2:
-    needs: [build-backend-services, build-api-gateway, build-frontend]
+    needs: build-and-push-images
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/master' && github.event_name == 'push'
     
@@ -244,7 +144,7 @@ jobs:
 
   # Optional: Deploy notification
   notify-completion:
-    needs: [build-backend-services, build-api-gateway, build-frontend, deploy-to-ec2]
+    needs: [build-and-push-images, deploy-to-ec2]
     runs-on: ubuntu-latest
     if: always()
     
@@ -252,7 +152,11 @@ jobs:
       - name: Build & Deploy Summary
         run: |
           echo "🎉 Build and deployment completed!"
-          echo "Backend services status: ${{ needs.build-backend-services.result }}"
-          echo "API Gateway status: ${{ needs.build-api-gateway.result }}"
-          echo "Frontend status: ${{ needs.build-frontend.result }}"
+          echo "Build status: ${{ needs.build-and-push-images.result }}"
           echo "Deployment status: ${{ needs.deploy-to-ec2.result }}"
+          
+          if [ "${{ needs.build-and-push-images.result }}" = "success" ] && [ "${{ needs.deploy-to-ec2.result }}" = "success" ]; then
+            echo "✅ All services successfully built and deployed!"
+          else
+            echo "❌ Some issues occurred during the process"
+          fi
