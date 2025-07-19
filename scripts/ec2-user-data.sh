@@ -16,6 +16,12 @@ chmod +x /usr/local/bin/docker-compose
 # Install Git
 yum install -y git
 
+# Install jq for JSON parsing
+yum install -y jq
+
+# Install curl for health checks
+yum install -y curl
+
 # Create application directory
 mkdir -p /home/ec2-user/eshop
 chown ec2-user:ec2-user /home/ec2-user/eshop
