@@ -18,6 +18,7 @@ COPY prisma ./prisma
 # Enable pnpm and install dependencies
 RUN corepack enable && corepack prepare pnpm@8.10.2 --activate
 RUN pnpm install --prod
+RUN npm install tslib@^2.6.0
 
 # Generate Prisma client
 RUN npx prisma generate
