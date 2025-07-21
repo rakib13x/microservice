@@ -318,6 +318,11 @@ jobs:
             # Configure git to use personal access token
             git config --global url."https://${{ secrets.GH_ACCESS_TOKEN }}@github.com/".insteadOf "https://github.com/"
             
+            # Discard local changes to tracked files before pulling
+            git reset --hard HEAD
+            # Optionally, clean untracked files except .env
+            git clean -fd -e .env
+            
             # Pull latest code
             git pull origin master
             
