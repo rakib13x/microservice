@@ -314,6 +314,9 @@ jobs:
           script: |
             # Navigate to app directory
             cd /home/ubuntu/eshop
+
+            # Configure git to use personal access token
+            git config --global url."https://${{ secrets.GH_ACCESS_TOKEN }}@github.com/".insteadOf "https://github.com/"
             
             # Pull latest code
             git pull origin master
