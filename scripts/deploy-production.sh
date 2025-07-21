@@ -37,5 +37,3 @@ else
     echo "❌ Deployment verification failed!"
     exit 1
 fi
-
-echo "🎉 Production deployment completed!"

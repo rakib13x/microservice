@@ -8,6 +8,8 @@ out-tsc
 # dependencies
 node_modules
 
+eshop-demo-key.pem
+
 # IDEs and editors
 /.idea
 .project
