@@ -41,7 +41,7 @@ COPY prisma ./prisma
 
 # Install dependencies
 RUN pnpm install --prod
-RUN npm install tslib@^2.6.0
+RUN pnpm add tslib@^2.6.0
 
 # Generate Prisma client
 RUN pnpm prisma generate
