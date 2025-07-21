@@ -31,7 +31,7 @@ sleep 30
 
 # Verify deployment
 echo "Verifying deployment..."
-if curl -f http://localhost/gateway-health; then
+if curl -f http://localhost:8080/gateway-health; then
     echo "✅ Deployment successful!"
 else
     echo "❌ Deployment verification failed!"
