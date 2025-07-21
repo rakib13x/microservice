@@ -26,6 +26,7 @@
   "dependencies": {
     "@prisma/client": "^6.7.0",
     "prisma": "^6.7.0",
+    "tslib": "^2.6.0",
     "tsconfig-paths": "^4.2.0"
   },
   "devDependencies": {
