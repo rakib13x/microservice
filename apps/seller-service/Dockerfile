@@ -10,8 +10,10 @@ COPY pnpm-workspace.yaml ./
 
 # Copy workspace packages that seller-service depends on
 COPY packages/libs/prisma ./packages/libs/prisma
+COPY packages/libs/redis ./packages/libs/redis
 COPY packages/middleware ./packages/middleware
 COPY packages/error-handler ./packages/error-handler
+COPY packages/utils/logs ./packages/utils/logs
 COPY prisma ./prisma
 
 # Install pnpm and dependencies
