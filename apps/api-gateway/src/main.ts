@@ -167,12 +167,6 @@ app.use(
   createProxyMiddleware(getServiceUrl("auth-service", 6001), "auth-service")
 );
 
-// Keep the default route as a fallback
-app.use(
-  "/",
-  createProxyMiddleware(getServiceUrl("auth-service", 6001), "auth-service")
-);
-
 // Global error handler
 app.use(
   (
