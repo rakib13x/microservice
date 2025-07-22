@@ -7,52 +7,231 @@ import cookieParser from "cookie-parser";
 import initializeSiteConfig from "./libs/initializeSiteConfig";
 
 const app = express();
+
+// Environment-based configuration
+const isProduction = process.env.NODE_ENV === "production";
+
+// Production-safe CORS configuration
+const allowedOrigins = isProduction
+  ? [
+      // Add your EC2 public IP/domain here
+      process.env.USER_UI_URL ||
+        `http://${process.env.EC2_PUBLIC_IP || "your-ec2-ip"}:3000`,
+      process.env.SELLER_UI_URL ||
+        `http://${process.env.EC2_PUBLIC_IP || "your-ec2-ip"}:3001`,
+      process.env.ADMIN_UI_URL ||
+        `http://${process.env.EC2_PUBLIC_IP || "your-ec2-ip"}:3002`,
+      // Also allow nginx proxy (internal Docker network access)
+      "http://nginx",
+      "http://localhost",
+    ]
+  : ["http://localhost:3000", "http://localhost:3001", "http://localhost:3002"];
+
 app.use(
   cors({
-    origin: ["http://localhost:3000", "http://localhost:3001","http://localhost:3002"],
-    allowedHeaders: ["Authorization", "Content-Type"],
+    origin: allowedOrigins,
+    allowedHeaders: ["Authorization", "Content-Type", "X-Requested-With"],
     credentials: true,
   })
 );
 
-app.use(morgan("dev"));
-app.use(express.json({ limit: "100mb" }));
-app.use(express.urlencoded({ limit: "100mb", extended: true }));
-app.use(cookieParser());
-app.set("trust proxy", 1);
+// Use appropriate logging for production
+app.use(morgan(isProduction ? "combined" : "dev"));
 
-// Apply rate limiting
+app.use(express.json({ limit: "10mb" })); // Reduced from 100mb for security
+app.use(express.urlencoded({ limit: "10mb", extended: true }));
+app.use(cookieParser());
+
+// Trust proxy settings for production (behind nginx/load balancer)
+app.set("trust proxy", isProduction ? "loopback" : 1);
+
+// Enhanced rate limiting
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: (req: any) => (req.user || req.seller ? 2000 : 500),
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 1000, // Simplified rate limit - auth should be handled by individual services
   message: { error: "Too many requests, please try again later!" },
   standardHeaders: true,
-  legacyHeaders: true,
+  legacyHeaders: false, // Disable legacy headers in production
   keyGenerator: (req: any) => req.ip,
+  skip: (req) => {
+    // Skip rate limiting for health checks
+    return req.path === "/gateway-health";
+  },
 });
 
 app.use(limiter);
 
+// Health check endpoint
 app.get("/gateway-health", (req, res) => {
-  res.send({ message: "Welcome to api-gateway!" });
+  res.status(200).json({
+    message: "API Gateway is healthy!",
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || "development",
+  });
 });
 
-app.use("/recommendation", proxy("http://localhost:6007"));
-app.use("/chatting", proxy("http://localhost:6006"));
-app.use("/admin", proxy("http://localhost:6005"));
-app.use("/order", proxy("http://localhost:6004"));
-app.use("/seller", proxy("http://localhost:6003"));
-app.use("/product", proxy("http://localhost:6002"));
-app.use("/", proxy("http://localhost:6001"));
+// Service URLs configuration
+const getServiceUrl = (serviceName: string, port: number) => {
+  if (isProduction) {
+    // Use Docker service names in production
+    return `http://${serviceName}:${port}`;
+  } else {
+    // Use localhost for development
+    return `http://localhost:${port}`;
+  }
+};
+
+// Enhanced proxy configuration with error handling
+const createProxyMiddleware = (serviceUrl: string, serviceName: string) => {
+  return proxy(serviceUrl, {
+    timeout: 30000, // 30 second timeout
+    proxyReqOptDecorator: (
+      proxyReqOpts: { headers: any },
+      srcReq: { ip: any; get: (arg0: string) => any }
+    ) => {
+      // Forward original IP for proper rate limiting in downstream services
+      proxyReqOpts.headers!["X-Forwarded-For"] = srcReq.ip;
+      proxyReqOpts.headers!["X-Original-Host"] = srcReq.get("host");
+      return proxyReqOpts;
+    },
+    proxyErrorHandler: (
+      err: { message: any },
+      res: {
+        headersSent: any;
+        status: (arg0: number) => {
+          (): any;
+          new (): any;
+          json: {
+            (arg0: { error: string; service: string; timestamp: string }): void;
+            new (): any;
+          };
+        };
+      },
+      next: any
+    ) => {
+      console.error(`Proxy error for ${serviceName}:`, err.message);
+      if (!res.headersSent) {
+        res.status(503).json({
+          error: "Service temporarily unavailable",
+          service: serviceName,
+          timestamp: new Date().toISOString(),
+        });
+      }
+    },
+  });
+};
+
+// Route to microservices using Docker service names in production
+app.use(
+  "/recommendation",
+  createProxyMiddleware(
+    getServiceUrl("recommendation-service", 6007),
+    "recommendation-service"
+  )
+);
+
+app.use(
+  "/chatting",
+  createProxyMiddleware(
+    getServiceUrl("chatting-service", 6006),
+    "chatting-service"
+  )
+);
+
+app.use(
+  "/admin",
+  createProxyMiddleware(getServiceUrl("admin-service", 6005), "admin-service")
+);
+
+app.use(
+  "/order",
+  createProxyMiddleware(getServiceUrl("order-service", 6004), "order-service")
+);
+
+app.use(
+  "/seller",
+  createProxyMiddleware(getServiceUrl("seller-service", 6003), "seller-service")
+);
+
+app.use(
+  "/product",
+  createProxyMiddleware(
+    getServiceUrl("product-service", 6002),
+    "product-service"
+  )
+);
+
+// Default route to auth service
+app.use(
+  "/",
+  createProxyMiddleware(getServiceUrl("auth-service", 6001), "auth-service")
+);
+
+// Global error handler
+app.use(
+  (
+    err: any,
+    req: express.Request,
+    res: express.Response,
+    next: express.NextFunction
+  ) => {
+    console.error("Global error handler:", err);
+
+    if (!res.headersSent) {
+      res.status(500).json({
+        error: isProduction ? "Internal server error" : err.message,
+        timestamp: new Date().toISOString(),
+      });
+    }
+  }
+);
+
+// Handle 404s
+app.use("*", (req, res) => {
+  res.status(404).json({
+    error: "Route not found",
+    path: req.originalUrl,
+    timestamp: new Date().toISOString(),
+  });
+});
 
 const port = process.env.PORT || 8080;
-const server = app.listen(port, () => {
-  console.log(`Listening at http://localhost:${port}/api`);
+const host = isProduction ? "0.0.0.0" : "localhost";
+
+const server = app.listen(Number(port), host, () => {
+  console.log(`🚀 API Gateway listening at http://${host}:${port}`);
+  console.log(`🌍 Environment: ${process.env.NODE_ENV || "development"}`);
+  console.log(`🔗 CORS Origins: ${JSON.stringify(allowedOrigins)}`);
+
   try {
     initializeSiteConfig();
-    console.log("Site config initialized successfully!");
+    console.log("✅ Site config initialized successfully!");
   } catch (error) {
-    console.error("Failed to initialize site config:", error);
+    console.error("❌ Failed to initialize site config:", error);
   }
 });
-server.on("error", console.error);
+
+// Graceful shutdown handling
+process.on("SIGTERM", () => {
+  console.log("🛑 SIGTERM received, shutting down gracefully");
+  server.close(() => {
+    console.log("✅ Process terminated");
+    process.exit(0);
+  });
+});
+
+process.on("SIGINT", () => {
+  console.log("🛑 SIGINT received, shutting down gracefully");
+  server.close(() => {
+    console.log("✅ Process terminated");
+    process.exit(0);
+  });
+});
+
+server.on("error", (error: any) => {
+  console.error("❌ Server error:", error);
+  if (error.code === "EADDRINUSE") {
+    console.error(`Port ${port} is already in use`);
+    process.exit(1);
+  }
+});
