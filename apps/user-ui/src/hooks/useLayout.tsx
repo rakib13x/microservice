@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 
 // fetch layout data from API
 const fetchLayout = async () => {
-  const response = await axiosInstance.get("/api/get-layouts");
+  const response = await axiosInstance.get("/auth/api/get-layouts");
   return response.data.layout;
 };
 

@@ -29,7 +29,7 @@ const ShippingAddressSection = () => {
 
   const { mutate: addAddress } = useMutation({
     mutationFn: async (payload: any) => {
-      const res = await axiosInstance.post("/api/add-address", payload);
+      const res = await axiosInstance.post("/auth/api/add-address", payload);
       return res.data.address;
     },
     onSuccess: () => {
@@ -43,7 +43,7 @@ const ShippingAddressSection = () => {
   const { data: addresses, isLoading } = useQuery({
     queryKey: ["shipping-addresses"],
     queryFn: async () => {
-      const res = await axiosInstance.get("/api/shipping-addresses");
+      const res = await axiosInstance.get("/auth/api/shipping-addresses");
       return res.data.addresses;
     },
   });
@@ -57,7 +57,7 @@ const ShippingAddressSection = () => {
 
   const { mutate: deleteAddress } = useMutation({
     mutationFn: async (id: string) => {
-      await axiosInstance.delete(`/api/delete-address/${id}`);
+      await axiosInstance.delete(`/auth/api/delete-address/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["shipping-addresses"] });

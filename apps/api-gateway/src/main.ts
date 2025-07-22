@@ -161,7 +161,13 @@ app.use(
   )
 );
 
-// Default route to auth service
+// Add this before the default route
+app.use(
+  "/auth",
+  createProxyMiddleware(getServiceUrl("auth-service", 6001), "auth-service")
+);
+
+// Keep the default route as a fallback
 app.use(
   "/",
   createProxyMiddleware(getServiceUrl("auth-service", 6001), "auth-service")

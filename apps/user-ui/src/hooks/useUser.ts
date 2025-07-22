@@ -6,7 +6,7 @@ import React from "react";
 
 // fetch user data from API
 const fetchUser = async () => {
-  const response = await axiosInstance.get("/api/logged-in-user", isProtected);
+  const response = await axiosInstance.get("/auth/api/logged-in-user", isProtected);
   return response.data.user;
 };
 

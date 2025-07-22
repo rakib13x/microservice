@@ -47,7 +47,7 @@ const ForgotPassword = () => {
   const requestOtpMutation = useMutation({
     mutationFn: async ({ email }: { email: string }) => {
       const reponse = await axios.post(
-        `${process.env.NEXT_PUBLIC_SERVER_URI}/api/forgot-password-user`,
+        `${process.env.NEXT_PUBLIC_SERVER_URI}/auth/api/forgot-password-user`,
         { email }
       );
       return reponse.data;
@@ -71,7 +71,7 @@ const ForgotPassword = () => {
     mutationFn: async () => {
       if (!userEmail) return;
       const response = await axios.post(
-        `${process.env.NEXT_PUBLIC_SERVER_URI}/api/verify-forgot-password-user`,
+        `${process.env.NEXT_PUBLIC_SERVER_URI}/auth/api/verify-forgot-password-user`,
         { email: userEmail, otp: otp.join("") }
       );
       return response.data;
@@ -91,7 +91,7 @@ const ForgotPassword = () => {
     mutationFn: async ({ password }: { password: string }) => {
       if (!password) return;
       const response = await axios.post(
-        `${process.env.NEXT_PUBLIC_SERVER_URI}/api/reset-password-user`,
+        `${process.env.NEXT_PUBLIC_SERVER_URI}/auth/api/reset-password-user`,
         { email: userEmail, newPassword: password }
       );
       return response.data;

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 
 // fetch admin data from API
 const fetchAdmin = async () => {
-  const response = await axiosInstance.get("/api/logged-in-admin");
+  const response = await axiosInstance.get("/auth/api/logged-in-admin");
   return response.data.user;
 };
 
