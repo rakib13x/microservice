@@ -19,11 +19,9 @@ COPY prisma ./prisma
 RUN corepack enable && corepack prepare pnpm@8.10.2 --activate
 RUN pnpm install --prod
 
-# Generate Prisma client
-RUN npx prisma generate
-
 # Copy built application
 COPY apps/admin-service/dist ./dist
+COPY apps/admin-service/entrypoint.sh ./entrypoint.sh
 
 # ---- Production Stage ----
 FROM node:20-alpine
@@ -42,6 +40,7 @@ COPY --from=builder --chown=nodejs:nodejs /app/node_modules ./node_modules
 COPY --from=builder --chown=nodejs:nodejs /app/dist ./dist
 COPY --from=builder --chown=nodejs:nodejs /app/package.json ./package.json
 COPY --from=builder --chown=nodejs:nodejs /app/prisma ./prisma
+COPY --from=builder --chown=nodejs:nodejs /app/entrypoint.sh ./entrypoint.sh
 
 # Switch to non-root user
 USER nodejs
@@ -49,5 +48,5 @@ USER nodejs
 # Expose the correct port
 EXPOSE 6005
 
-# Use dumb-init to handle signals properly
-CMD ["dumb-init", "node", "dist/main.js"]
+# Use entrypoint script to generate Prisma client at runtime
+ENTRYPOINT ["./entrypoint.sh"]
