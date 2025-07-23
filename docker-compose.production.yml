@@ -265,6 +265,10 @@ services:
       - .env
     environment:
       - NODE_ENV=production
+      - NEXT_PUBLIC_SERVER_URI=https://shondhane.com
+      - NEXT_PUBLIC_CHATTING_WEBSOCKET_URI=wss://shondhane.com/ws-chatting
+      - NEXT_PUBLIC_SELLER_SERVER_URI=https://sellers.shondhane.com
+      - NEXT_PUBLIC_STRIPE_PUBLIC_KEY=pk_test_51Ox7STKfWK4AoG4YmNVlSSToDlYzvr8TGe2d36vzYt5iYQ4JViRC976MOF9A2uXU2wzJt4T2IN5NXscnmpGlXlAz00whmGYvmP
     restart: unless-stopped
     deploy:
       resources:
