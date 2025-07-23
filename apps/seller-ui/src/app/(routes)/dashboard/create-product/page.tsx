@@ -11,11 +11,21 @@ import ColorSelector from "@eshop/components/color-selector";
 import CustomProperties from "@eshop/components/custom-properties";
 import CustomSpecifications from "@eshop/components/custom-specifications";
 import Input from "@eshop/components/input";
-import RichTextEditor from "@eshop/components/rich-text-editor";
 import SizeSelector from "@eshop/components/size-selector";
 import React, { useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import toast from "react-hot-toast";
+import dynamic from "next/dynamic";
+
+// Import RichTextEditor with no SSR
+const RichTextEditor = dynamic(() => import("@eshop/components/rich-text-editor"), {
+  ssr: false,
+  loading: () => (
+    <div className="w-full h-32 border border-gray-700 rounded-md bg-gray-800 flex items-center justify-center">
+      <p className="text-gray-400">Loading editor...</p>
+    </div>
+  ),
+});
 
 interface UploadedImage {
   fileId: string;
