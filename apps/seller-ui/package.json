@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@nx/next": "^20.6.1",
     "@eshop/components": "workspace:*",
     "@prisma/client": "^6.11.1",
     "@stripe/react-stripe-js": "^3.6.0",
