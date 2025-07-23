@@ -17,7 +17,7 @@ COPY apps/seller-ui/package.json ./apps/seller-ui/
 COPY packages ./packages
 
 # Install dependencies
-RUN pnpm install --filter seller-ui... --frozen-lockfile
+RUN pnpm install --filter seller-ui... --prod
 
 # 2. Build the app
 FROM node:20-alpine AS builder
