@@ -23,7 +23,7 @@ export const WebSocketProvider = ({
   useEffect(() => {
     if (!user?.id) return;
 
-    const ws = new WebSocket(process.env.NEXT_PUBLIC_CHATTING_WEBSOCKET_URI!);
+    const ws = new WebSocket(process.env.NEXT_PUBLIC_CHATTING_WEBSOCKET_URI || "wss://shondhane.com/ws-chatting");
     wsRef.current = ws;
 
     ws.onopen = () => {
