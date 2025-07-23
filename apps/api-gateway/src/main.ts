@@ -14,14 +14,9 @@ const isProduction = process.env.NODE_ENV === "production";
 // Production-safe CORS configuration
 const allowedOrigins = isProduction
   ? [
-      // Add your EC2 public IP/domain here
-      process.env.USER_UI_URL ||
-        `http://${process.env.EC2_PUBLIC_IP || "your-ec2-ip"}:3000`,
-      process.env.SELLER_UI_URL ||
-        `http://${process.env.EC2_PUBLIC_IP || "your-ec2-ip"}:3001`,
-      process.env.ADMIN_UI_URL ||
-        `http://${process.env.EC2_PUBLIC_IP || "your-ec2-ip"}:3002`,
-      // Also allow nginx proxy (internal Docker network access)
+      "https://shondhane.com",
+      "https://sellers.shondhane.com",
+      "https://admin.shondhane.com",
       "http://nginx",
       "http://localhost",
     ]
