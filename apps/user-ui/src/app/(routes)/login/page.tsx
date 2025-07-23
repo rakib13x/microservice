@@ -3,6 +3,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import GoogleButton from "apps/user-ui/src/shared/components/google-button";
 import { useAuthStore } from "apps/user-ui/src/store/authStore";
+import axiosInstance from "apps/user-ui/src/utils/axiosInstance";
 import axios, { AxiosError } from "axios";
 import { Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
@@ -31,11 +32,9 @@ const Login = () => {
 
   const loginMutation = useMutation({
     mutationFn: async (data: FormData) => {
-      const response = await axios.post(
-        `${process.env.NEXT_PUBLIC_SERVER_URI}/auth/api/login-user`,
-        data,
-        { withCredentials: true }
-      );
+      const response = await axiosInstance.post(`/auth/api/login-user`, data, {
+        withCredentials: true,
+      });
       return response.data;
     },
     onSuccess: (data) => {
