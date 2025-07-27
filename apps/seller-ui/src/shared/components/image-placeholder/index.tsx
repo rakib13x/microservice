@@ -1,38 +1,45 @@
-import { Pencil, WandSparkles, X } from "lucide-react";
-import Image from "next/image";
 import React, { useState } from "react";
 
 const ImagePlaceHolder = ({
-  size,
   small,
-  onImageChange,
-  pictureUploadingLoader,
-  onRemove,
+  size,
   defaultImage = null,
-  index = null,
-  setSelectedImage,
-  setOpenImageModal,
+  index = 0,
+  setValue,
   images,
+  setImages,
 }: {
   size: string;
   small?: boolean;
-  pictureUploadingLoader: boolean;
-  onImageChange: (file: File | null, index: number) => void;
-  onRemove?: (index: number) => void;
   defaultImage?: string | null;
-  setSelectedImage: (e: string) => void;
+  index?: number;
+  setValue: any;
   images: any;
-  setOpenImageModal: (openImageModal: boolean) => void;
-  index?: any;
+  setImages: any;
 }) => {
   const [imagePreview, setImagePreview] = useState<string | null>(defaultImage);
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
 
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      setImagePreview(URL.createObjectURL(file));
-      onImageChange(file, index!);
-    }
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const base64 = reader.result as string;
+
+      const updated = [...images];
+      updated[index] = { base64, file };
+
+      // Push one more empty slot if this is the last image
+      if (index === images.length - 1) {
+        updated.push(null);
+      }
+
+      setImagePreview(base64); // ✅ set the preview
+      setImages(updated);
+      setValue("images", updated); // for react-hook-form
+    };
+
+    reader.readAsDataURL(file);
   };
 
   return (
@@ -41,70 +48,44 @@ const ImagePlaceHolder = ({
         small ? "h-[180px]" : "h-[450px]"
       } w-full cursor-pointer bg-[#1e1e1e] border border-gray-600 rounded-lg flex flex-col justify-center items-center`}
     >
+      <label
+        htmlFor={`image-upload-${index}`}
+        className="w-full h-full flex flex-col justify-center items-center cursor-pointer"
+      >
+        {imagePreview ? (
+          <img
+            src={imagePreview}
+            alt="preview"
+            className="w-full h-full object-cover rounded-lg"
+          />
+        ) : (
+          <>
+            <p
+              className={`text-gray-400 ${
+                small ? "text-xl" : "text-4xl"
+              } font-semibold`}
+            >
+              {size}
+            </p>
+            <p
+              className={`text-gray-500 ${
+                small ? "text-sm" : "text-lg"
+              } pt-2 text-center`}
+            >
+              Please choose an image <br />
+              according to the expected ratio
+            </p>
+          </>
+        )}
+      </label>
+
       <input
         type="file"
         accept="image/*"
         className="hidden"
         id={`image-upload-${index}`}
-        onChange={handleFileChange}
+        onChange={handleImageChange}
       />
-      {imagePreview ? (
-        <>
-          <button
-            type="button"
-            disabled={pictureUploadingLoader}
-            onClick={() => onRemove?.(index!)}
-            className="absolute top-3 right-3 p-2 !rounded bg-red-600 shadow-lg"
-          >
-            <X size={16} />
-          </button>
-          <button
-            disabled={pictureUploadingLoader}
-            className="absolute top-3 right-[70px] p-2 !rounded bg-blue-500 shadow-lg cursor-pointer"
-            onClick={() => {
-              setOpenImageModal(true);
-              setSelectedImage(images[index].file_url);
-            }}
-          >
-            <WandSparkles size={16} />
-          </button>
-        </>
-      ) : (
-        <label
-          htmlFor={`image-upload-${index}`}
-          className="absolute top-3 right-3 p-2 !rounded bg-slate-700 shadow-lg cursor-pointer"
-        >
-          <Pencil size={16} />
-        </label>
-      )}
-
-      {imagePreview ? (
-        <Image
-          width={400}
-          height={300}
-          src={imagePreview}
-          alt="uploaded"
-          className="w-full h-full object-cover rounded-lg"
-        />
-      ) : (
-        <>
-          <p
-            className={`text-gray-400 ${
-              small ? "text-xl" : "text-4xl"
-            } font-semibold`}
-          >
-            {size}
-          </p>
-          <p
-            className={`text-gray-500 ${
-              small ? "text-sm" : "text-lg"
-            } pt-2 text-center`}
-          >
-            Please choose an image <br />
-            according to the expected ratio
-          </p>
-        </>
-      )}
     </div>
   );
 };

@@ -33,8 +33,8 @@ app.use(
 // Use appropriate logging for production
 app.use(morgan(isProduction ? "combined" : "dev"));
 
-app.use(express.json({ limit: "10mb" })); // Reduced from 100mb for security
-app.use(express.urlencoded({ limit: "10mb", extended: true }));
+app.use(express.json({ limit: "50mb" })); // Reduced from 100mb for security
+app.use(express.urlencoded({ limit: "50mb", extended: true }));
 app.use(cookieParser());
 
 // Trust proxy settings for production (behind nginx/load balancer)

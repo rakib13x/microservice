@@ -6,22 +6,14 @@ import {
   getFilteredRowModel,
   flexRender,
 } from "@tanstack/react-table";
-import {
-  Search,
-  Pencil,
-  Trash,
-  Eye,
-  Plus,
-  BarChart,
-  Star,
-  ChevronRight,
-} from "lucide-react";
+import { Search, Trash, Eye, Plus, BarChart, Star } from "lucide-react";
 import Link from "next/link";
 import axiosInstance from "apps/seller-ui/src/utils/axiosInstance";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import Image from "next/image";
 import DeleteConfirmationModal from "apps/seller-ui/src/shared/components/modals/delete.confirmation.modal";
 import BreadCrumbs from "apps/seller-ui/src/shared/components/breadcrumbs";
+import AnalyticsModal from "apps/seller-ui/src/shared/components/modals/analytics.modal";
 
 const fetchProducts = async () => {
   const res = await axiosInstance.get("/product/api/get-shop-products");
@@ -38,9 +30,9 @@ const restoreProduct = async (productId: string) => {
 };
 
 const ProductList = () => {
-  const [globalFilter, setGlobalFilter] = useState("");
   const [analyticsData, setAnalyticsData] = useState(null);
   const [showAnalytics, setShowAnalytics] = useState(false);
+  const [globalFilter, setGlobalFilter] = useState("");
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<any>();
   const queryClient = useQueryClient();
@@ -75,7 +67,6 @@ const ProductList = () => {
         accessorKey: "image",
         header: "Image",
         cell: ({ row }: any) => {
-          console.log(row.original);
           return (
             <Image
               src={row.original.images[0]?.url}
@@ -142,18 +133,15 @@ const ProductList = () => {
         cell: ({ row }: any) => (
           <div className="flex gap-3">
             <Link
-              href={`/product/${row.original.id}`}
+              href={`${process.env.NEXT_PUBLIC_USER_UI_LINK}/product/${row.original.slug}`}
               className="text-blue-400 hover:text-blue-300 transition"
             >
               <Eye size={18} />
             </Link>
-            <Link
-              href={`/product/edit/${row.original.id}`}
-              className="text-yellow-400 hover:text-yellow-300 transition"
+            <button
+              className="text-green-400 hover:text-green-300 transition"
+              onClick={() => openAnalytics(row.original)}
             >
-              <Pencil size={18} />
-            </Link>
-            <button className="text-green-400 hover:text-green-300 transition">
               <BarChart size={18} />
             </button>
             <button
@@ -178,6 +166,12 @@ const ProductList = () => {
     state: { globalFilter },
     onGlobalFilterChange: setGlobalFilter,
   });
+
+  // Handle Opening Analytics Modal
+  const openAnalytics = (product: any) => {
+    setAnalyticsData(product);
+    setShowAnalytics(true);
+  };
 
   const openDeleteModal = (product: any) => {
     setSelectedProduct(product);
@@ -254,6 +248,18 @@ const ProductList = () => {
               ))}
             </tbody>
           </table>
+        )}
+
+        {!isLoading && products?.length === 0 && (
+          <p className="text-center py-3 text-white">No products found!</p>
+        )}
+
+        {/* Analytics Modal */}
+        {showAnalytics && (
+          <AnalyticsModal
+            product={analyticsData}
+            onClose={() => setShowAnalytics(false)}
+          />
         )}
 
         {showDeleteModal && (

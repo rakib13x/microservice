@@ -9,25 +9,8 @@ import { NextFunction, Request, Response } from "express";
 import Stripe from "stripe";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2025-02-24.acacia",
+  apiVersion: "2022-11-15",
 });
-
-// Test endpoint to check environment variables
-export const testEnv = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
-  try {
-    console.log("DATABASE_URL in controller:", process.env.DATABASE_URL ? "SET" : "NOT SET");
-    res.status(200).json({
-      message: "Environment test",
-      databaseUrl: process.env.DATABASE_URL ? "SET" : "NOT SET"
-    });
-  } catch (error) {
-    return next(error);
-  }
-};
 
 // get product categories
 export const getCategories = async (
@@ -254,6 +237,24 @@ export const createProduct = async (
       );
     }
 
+     // Upload all images to ImageKit
+     const uploadedImages = await Promise.all(
+      images.map(async (img: any, index: number) => {
+        if (!img?.base64) return null;
+
+        const uploadResponse = await imagekit.upload({
+          file: img.base64,
+          fileName: `product-${Date.now()}-${index}.jpg`,
+          folder: "/products",
+        });
+
+        return {
+          file_id: uploadResponse.fileId,
+          url: uploadResponse.url,
+        };
+      })
+    );
+
     const newProduct = await prisma.products.create({
       data: {
         title,
@@ -268,9 +269,9 @@ export const createProduct = async (
         video_url,
         category,
         subCategory,
-        colors: colors || [],
-        discount_codes: discountCodes.map((codeId: string) => codeId),
-        sizes: sizes || [],
+        colors,
+        discount_codes: discountCodes?.map((codeId: string) => codeId) || [],
+        sizes,
         stock: parseInt(stock),
         sale_price: parseFloat(sale_price),
         regular_price: parseFloat(regular_price),
@@ -280,15 +281,10 @@ export const createProduct = async (
         ending_date: req.body.ending_date
           ? new Date(req.body.ending_date)
           : null,
-        custom_properties: customProperties || {},
-        custom_specifications: custom_specifications || {},
+        custom_properties: customProperties,
+        custom_specifications: custom_specifications,
         images: {
-          create: images
-            .filter((img: any) => img && img.fileId && img.file_url)
-            .map((img: any) => ({
-              file_id: img.fileId,
-              url: img.file_url,
-            })),
+          create: uploadedImages.filter(Boolean), // remove nulls
         },
       },
       include: { images: true },
@@ -931,6 +927,71 @@ export const topShops = async (
     return res.status(200).json({ shops: top10Shops });
   } catch (error) {
     console.error("Error fetching top shops:", error);
+    return next(error);
+  }
+};
+
+// slug validator
+export const slugValidator = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    let { slug } = req.body;
+
+    if (!slug || typeof slug !== "string") {
+      return next(
+        new ValidationError("Slug is required and must be a string.")
+      );
+    }
+
+    // Slugify manually (no slugify lib)
+    slug = slug
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .substring(0, 50); // cap to 50 chars
+
+    let uniqueSlug = slug;
+    let counter = 1;
+
+    while (
+      await prisma.products.findUnique({
+        where: { slug: uniqueSlug },
+      })
+    ) {
+      uniqueSlug = `${slug}-${counter}`;
+      counter++;
+    }
+
+    return res.status(200).json({
+      available: uniqueSlug === slug,
+      slug: uniqueSlug,
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+
+// get product analytics
+export const getProductAnalytics = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const analytics = await prisma.productAnalytics.findUnique({
+      where: {
+        productId: req.params.productId,
+      },
+    });
+    res.status(201).json({
+      success: true,
+      analytics,
+    });
+  } catch (error) {
     return next(error);
   }
 };

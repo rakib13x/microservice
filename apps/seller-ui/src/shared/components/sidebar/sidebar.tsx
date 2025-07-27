@@ -25,11 +25,12 @@ import {
   TicketPercent,
 } from "lucide-react";
 import Payment from "apps/seller-ui/src/assets/icons/payment";
+import useRequireAuth from "apps/seller-ui/src/hooks/useRequiredAuth";
 
 const SidebarBarWrapper = () => {
   const { activeSidebar, setActiveSidebar } = useSidebar();
   const pathName = usePathname();
-  const { seller } = useSeller();
+  const { seller } = useRequireAuth();
 
   useEffect(() => {
     setActiveSidebar(pathName);

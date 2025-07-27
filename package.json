@@ -1,7 +1,6 @@
 {
   "name": "@./source",
   "version": "0.0.0",
-  "license": "MIT",
   "scripts": {
     "dev": "npx nx run-many --target=serve --all --maxParallel=10",
     "user-ui": "npx nx run-many --target=dev --all --projects=user-ui",
@@ -9,6 +8,8 @@
     "admin-ui": "npx nx run-many --target=dev --all --projects=admin-ui",
     "kafka:up": "docker compose -f docker-compose.production.yml up kafka zookeeper -d",
     "kafka:down": "docker compose -f docker-compose.production.yml stop kafka zookeeper -d",
+    "kafka:dev:up": "docker compose -f docker-compose.dev.yml up -d",
+    "kafka:dev:down": "docker compose -f docker-compose.dev.yml down",
     "build": "npx nx run-many --target=build --all --parallel=3",
     "start:prod": "npx nx run-many --target=serve --projects=auth-service,product-service,order-service,seller-service,admin-service,api-gateway,kafka-service,logger-service,chatting-service,recommendation-service --parallel=10 & npm run ui:prod",
     "ui:prod": "npm run user-ui:prod & npm run seller-ui:prod & npm run admin-ui:prod",

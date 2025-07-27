@@ -22,6 +22,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import Image from "next/image";
 import DeleteConfirmationModal from "apps/seller-ui/src/shared/components/modals/delete.confirmation.modal";
 import BreadCrumbs from "apps/seller-ui/src/shared/components/breadcrumbs";
+import AnalyticsModal from "apps/seller-ui/src/shared/components/modals/analytics.modal";
 
 const fetchEvents = async () => {
   const res = await axiosInstance.get("/product/api/get-shop-products");
@@ -44,6 +45,11 @@ const EventList = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<any>();
   const queryClient = useQueryClient();
+  // Handle Opening Analytics Modal
+  const openAnalytics = (product: any) => {
+    setAnalyticsData(product);
+    setShowAnalytics(true);
+  };
 
   const { data: products = [], isLoading } = useQuery({
     queryKey: ["shop-events"],
@@ -147,18 +153,15 @@ const EventList = () => {
         cell: ({ row }: any) => (
           <div className="flex gap-3">
             <Link
-              href={`/product/${row.original.id}`}
+              href={`${process.env.NEXT_PUBLIC_USER_UI_LINK}/product/${row.original.slug}`}
               className="text-blue-400 hover:text-blue-300 transition"
             >
               <Eye size={18} />
             </Link>
-            <Link
-              href={`/product/edit/${row.original.id}`}
-              className="text-yellow-400 hover:text-yellow-300 transition"
+            <button
+              className="text-green-400 hover:text-green-300 transition"
+              onClick={() => openAnalytics(row.original)}
             >
-              <Pencil size={18} />
-            </Link>
-            <button className="text-green-400 hover:text-green-300 transition">
               <BarChart size={18} />
             </button>
             <button
@@ -259,6 +262,14 @@ const EventList = () => {
               ))}
             </tbody>
           </table>
+        )}
+
+        {/* Analytics Modal */}
+        {showAnalytics && (
+          <AnalyticsModal
+            product={analyticsData}
+            onClose={() => setShowAnalytics(false)}
+          />
         )}
 
         {showDeleteModal && (

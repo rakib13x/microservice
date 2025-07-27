@@ -1,6 +1,7 @@
 "use client";
 
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useAuthStore } from "apps/seller-ui/src/store/authStore";
 import axios, { AxiosError } from "axios";
 import { Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
@@ -14,6 +15,8 @@ type FormData = {
 };
 
 const Login = () => {
+  const { setLoggedIn } = useAuthStore();
+  const queryClient = useQueryClient();
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
   const [rememberMe, setRememberMe] = useState(false);
@@ -36,6 +39,8 @@ const Login = () => {
     },
     onSuccess: (data) => {
       setServerError(null);
+      setLoggedIn(true);
+      queryClient.invalidateQueries({ queryKey: ["seller"] });
       router.push("/");
     },
     onError: (error: AxiosError) => {
