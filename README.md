@@ -24,7 +24,7 @@ A simple guide to run the e-commerce platform locally on your machine.
 
 Before you start, make sure you have these installed:
 
-- **Node.js** (v20.19.3 or higher)
+- **Node.js** (v20.19.3)
 - **Docker Desktop** (for Kafka)
 - **pnpm** (recommended)
 
@@ -100,6 +100,9 @@ NEXT_PUBLIC_STRIPE_PUBLIC_KEY="pk_test_..."
 # ImageKit (Image CDN)
 IMAGEKIT_PUBLIC_KEY="public_..."
 IMAGEKIT_SECRET_KEY="private_..."
+# KAFKA_BROKERS=kafka:29092 only for production
+# Use local Kafka for development
+KAFKA_BROKERS=localhost:9092
 ```
 
 #### UI `.env` files (Frontend Apps)
