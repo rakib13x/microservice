@@ -603,7 +603,7 @@ export const createStripeConnectLink = async (
     const account = await stripe.accounts.create({
       type: "express",
       email: seller?.email,
-      country: "GB",
+      country: "US",
       capabilities: {
         card_payments: { requested: true },
         transfers: { requested: true },

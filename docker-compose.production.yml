@@ -265,10 +265,10 @@ services:
       - .env
     environment:
       - NODE_ENV=production
-      - NEXT_PUBLIC_SERVER_URI=https://shondhane.com
-      - NEXT_PUBLIC_CHATTING_WEBSOCKET_URI=wss://shondhane.com/ws-chatting
-      - NEXT_PUBLIC_SELLER_SERVER_URI=https://sellers.shondhane.com
-      - NEXT_PUBLIC_STRIPE_PUBLIC_KEY=pk_test_51Ox7STKfWK4AoG4YmNVlSSToDlYzvr8TGe2d36vzYt5iYQ4JViRC976MOF9A2uXU2wzJt4T2IN5NXscnmpGlXlAz00whmGYvmP
+      - NEXT_PUBLIC_SERVER_URI=https://ezcommerce.store
+      - NEXT_PUBLIC_CHATTING_WEBSOCKET_URI=wss://ezcommerce.store/ws-chatting
+      - NEXT_PUBLIC_SELLER_SERVER_URI=https://sellers.ezcommerce.store
+      - NEXT_PUBLIC_STRIPE_PUBLIC_KEY=pk_test_51OFhwZJNaoEy3rJ7Sk85sFffgSk00kbxLXIJLuSQvcNBi6ID4K0Jb9I7FjiYcGLIInnyrgCtALWms8C6xMwjCtQ500ATLnxLG9
     restart: unless-stopped
     deploy:
       resources:
@@ -283,13 +283,15 @@ services:
       - .env
     environment:
       - NODE_ENV=production
+      - NEXT_PUBLIC_SERVER_URI=https://ezcommerce.store
+      - NEXT_PUBLIC_CHATTING_WEBSOCKET_URI=wss://ezcommerce.store/ws-chatting
+      - NEXT_PUBLIC_USER_UI_LINK=https://www.ezcommerce.store
     restart: unless-stopped
     deploy:
       resources:
         limits:
           memory: 512M
           cpus: '0.3'
-
   # Admin UI
   admin-ui:
     image: ${DOCKER_USERNAME}/admin-ui:latest
@@ -297,6 +299,9 @@ services:
       - .env
     environment:
       - NODE_ENV=production
+      - NEXT_PUBLIC_SERVER_URI=https://ezcommerce.store
+      - NEXT_PUBLIC_USER_UI_LINK=https://www.ezcommerce.store
+      - NEXT_PUBLIC_SOCKET_URI=ws://ezcommerce.store/ws-admin
     restart: unless-stopped
     deploy:
       resources:

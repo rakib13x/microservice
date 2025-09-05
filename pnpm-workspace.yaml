@@ -1,7 +1,9 @@
 packages:
-  - 'apps/*'
-  - 'packages/components'
-  - 'packages/error-handler'
-  - 'packages/libs/*'
-  - 'packages/middleware'
-  - 'packages/utils/*'
+  - apps/*
+  - packages/components
+  - packages/error-handler
+  - packages/libs/*
+  - packages/middleware
+  - packages/utils/*
+ignoredBuiltDependencies:
+  - '@prisma/client'

@@ -17,6 +17,7 @@ const Page = () => {
         const res = await axiosInstance.get(
           `/order/api/get-order-details/${orderId}`
         );
+        console.log("Order details fetched successfully:", res.data.order);
         setOrder(res.data.order);
       } catch (err) {
         console.error("Failed to fetch order details", err);
@@ -193,7 +194,7 @@ const Page = () => {
               className="border border-gray-200 rounded-md p-4 flex items-center gap-4"
             >
               <img
-                src={item.product?.images[0]?.url || "/placeholder.png"}
+                src={item.product?.image[0]?.url || "/placeholder.png"}
                 alt={item.product?.title || "Product image"}
                 className="w-16 h-16 object-cover rounded-md border border-gray-200"
               />

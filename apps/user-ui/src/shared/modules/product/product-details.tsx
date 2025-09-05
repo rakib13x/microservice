@@ -7,6 +7,7 @@ import {
   MessageSquareText,
   Package,
   WalletMinimal,
+  Star,
 } from "lucide-react";
 import Image from "next/image";
 import React, { useEffect, useState } from "react";
@@ -22,6 +23,9 @@ import ProductCard from "../../components/cards/product-card";
 import axiosInstance from "apps/user-ui/src/utils/axiosInstance";
 import { isProtected } from "apps/user-ui/src/utils/protected";
 import { useRouter } from "next/navigation";
+import ReviewModal from "../../components/modals/review.modal";
+import { toast } from "sonner";
+import ProfileIcon from "apps/user-ui/src/assets/svgs/profile-icon";
 
 const ProductDetails = ({ productDetails }: { productDetails: any }) => {
   const { user, isLoading } = useUser();
@@ -29,7 +33,14 @@ const ProductDetails = ({ productDetails }: { productDetails: any }) => {
   const deviceInfo = useDeviceTracking();
   const router = useRouter();
 
+  const profileLogo = <ProfileIcon />;
+
+  const [reviewModalOpen, setReviewModalOpen] = useState(false);
   const [isChatLoading, setIsChatLoading] = useState(false);
+  const [canWriteReview, setCanWriteReview] = useState(false);
+  const [checkingEligibility, setCheckingEligibility] = useState(false);
+  const [reviews, setReviews] = useState([]);
+  const [reviewsLoading, setReviewsLoading] = useState(false);
 
   const [currentImage, setCurrentImage] = useState(
     productDetails?.images[0]?.url
@@ -57,6 +68,63 @@ const ProductDetails = ({ productDetails }: { productDetails: any }) => {
   const isWishlisted = wishlist.some(
     (item: any) => item.id === productDetails.id
   );
+
+  // Check if user can write a review for this product
+  const checkReviewEligibility = async () => {
+    if (!user?.id || !productDetails?.id) return;
+
+    setCheckingEligibility(true);
+    try {
+      const response = await axiosInstance.get(
+        `/order/api/get-user-orders`,
+        isProtected
+      );
+
+      const userOrders = response.data.orders || [];
+
+      // Check if user has ordered this product and it's been delivered
+      const hasOrderedAndDelivered = userOrders.some(
+        (order: any) =>
+          order.deliveryStatus === "Delivered" &&
+          order.items.some((item: any) => item.productId === productDetails.id)
+      );
+
+      setCanWriteReview(hasOrderedAndDelivered);
+    } catch (error) {
+      console.error("Error checking review eligibility:", error);
+      setCanWriteReview(false);
+    } finally {
+      setCheckingEligibility(false);
+    }
+  };
+
+  // Fetch product reviews
+  const fetchProductReviews = async () => {
+    if (!productDetails?.id) return;
+
+    setReviewsLoading(true);
+    try {
+      const response = await axiosInstance.get(
+        `/product/api/product/${productDetails.id}/reviews`
+      );
+      setReviews(response.data.reviews || []);
+    } catch (error) {
+      console.error("Error fetching reviews:", error);
+      setReviews([]);
+    } finally {
+      setReviewsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (user && productDetails?.id) {
+      checkReviewEligibility();
+    }
+  }, [user, productDetails?.id]);
+
+  useEffect(() => {
+    fetchProductReviews();
+  }, [productDetails?.id]);
 
   // Navigate to Previous Image
   const prevImage = () => {
@@ -121,6 +189,31 @@ const ProductDetails = ({ productDetails }: { productDetails: any }) => {
     }
   };
 
+  const handleWriteReview = () => {
+    if (!user) {
+      toast.error("Please login to write a review");
+      router.push("/login");
+      return;
+    }
+
+    if (!canWriteReview) {
+      toast.error(
+        "You can only review products you have purchased and received"
+      );
+      return;
+    }
+
+    setReviewModalOpen(true);
+  };
+
+  const handleReviewSuccess = () => {
+    // Refresh reviews after successful submission
+    fetchProductReviews();
+    // Disable further reviews from this user for this product
+    setCanWriteReview(false);
+    toast.success("Review submitted successfully!");
+  };
+
   return (
     <div className="w-full bg-[#f5f5f5] py-5">
       <div className="w-[90%] bg-white lg:w-[80%] mx-auto pt-6 grid grid-cols-1 lg:grid-cols-[28%_44%_28%] gap-6 overflow-hidden">
@@ -157,7 +250,7 @@ const ProductDetails = ({ productDetails }: { productDetails: any }) => {
             />
           </div>
           {/* Thumbnail images array */}
-          <div className="relative flex items-center gap-2 mt04 overflow-hidden">
+          <div className="relative flex items-center gap-2 mt-4 overflow-hidden">
             {productDetails?.images?.length > 4 && (
               <button
                 className="absolute left-0 bg-white p-2 rounded-full shadow-md z-10"
@@ -207,7 +300,7 @@ const ProductDetails = ({ productDetails }: { productDetails: any }) => {
             <div className="flex gap-2 mt-2 text-yellow-500">
               <Ratings rating={productDetails?.rating} />
               <Link href={"#reviews"} className="text-blue-500 hover:underline">
-                (0 Reviews)
+                ({reviews.length} Reviews)
               </Link>
             </div>
 
@@ -469,14 +562,96 @@ const ProductDetails = ({ productDetails }: { productDetails: any }) => {
         </div>
       </div>
 
-      <div className="w-[90%] lg:w-[80%] mx-auto">
+      <div className="w-[90%] lg:w-[80%] mx-auto" id="reviews">
         <div className="bg-white min-h-[50vh] h-full mt-5 p-5">
-          <h3 className="text-lg font-semibold">
-            Ratings & Reviews of {productDetails?.title}
-          </h3>
-          <p className="text-center pt-14">No Reviews available yet!</p>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold">
+              Ratings & Reviews of {productDetails?.title}
+            </h3>
+
+            {/* Write Review Button - Only show if user can write review */}
+            {user && canWriteReview && (
+              <button
+                onClick={handleWriteReview}
+                disabled={checkingEligibility}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                <Star size={16} />
+                Write Review
+              </button>
+            )}
+          </div>
+
+          {/* Review eligibility message */}
+          {user && !canWriteReview && !checkingEligibility && (
+            <div className="mb-4 p-3 bg-yellow-100 border border-yellow-300 rounded-lg">
+              <p className="text-sm text-yellow-800">
+                You can only review products you have purchased and received.
+              </p>
+            </div>
+          )}
+
+          {reviewsLoading ? (
+            <div className="text-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-2 border-blue-600 border-t-transparent mx-auto"></div>
+              <p className="mt-2 text-gray-600">Loading reviews...</p>
+            </div>
+          ) : reviews.length > 0 ? (
+            <div className="space-y-4">
+              {reviews.map((review: any) => (
+                <div key={review.id} className="border-b border-gray-200 pb-4">
+                  <div className="flex items-center gap-3 mb-2">
+                    {review.user.avatar ? (
+                      <Image
+                        src={review.user.avatar}
+                        alt={review.user.name}
+                        width={40}
+                        height={40}
+                        className="rounded-full"
+                      />
+                    ) : (
+                      <ProfileIcon className="w-6 h-6 rounded-full" />
+                    )}
+                    <div>
+                      <p className="font-medium">{review.user.name}</p>
+                      <div className="flex items-center gap-2">
+                        <Ratings rating={review.rating} />
+                        <span className="text-sm text-gray-600">
+                          {new Date(review.createdAt).toLocaleDateString()}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  <p className="text-gray-700 mb-2 ml-9">{review.review}</p>
+                  {review.images && review.images.length > 0 && (
+                    <div className="flex gap-2">
+                      {review.images.map((image: string, index: number) => (
+                        <Image
+                          key={index}
+                          src={image}
+                          alt={`Review image ${index + 1}`}
+                          width={60}
+                          height={60}
+                          className="rounded-lg object-cover"
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-center pt-14">No Reviews available yet!</p>
+          )}
         </div>
       </div>
+
+      <ReviewModal
+        isOpen={reviewModalOpen}
+        setIsOpen={setReviewModalOpen}
+        productId={productDetails?.id}
+        onSuccess={handleReviewSuccess}
+      />
 
       <div className="w-[90%] lg:w-[80%] mx-auto">
         <div className="w-full h-full my-5 p-5">

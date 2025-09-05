@@ -237,8 +237,8 @@ export const createProduct = async (
       );
     }
 
-     // Upload all images to ImageKit
-     const uploadedImages = await Promise.all(
+    // Upload all images to ImageKit
+    const uploadedImages = await Promise.all(
       images.map(async (img: any, index: number) => {
         if (!img?.base64) return null;
 
@@ -446,8 +446,8 @@ export const getStripeAccount = async (
         business_name:
           stripeAccount.business_profile?.name ||
           stripeAccount.individual?.first_name +
-            " " +
-            stripeAccount.individual?.last_name ||
+          " " +
+          stripeAccount.individual?.last_name ||
           "N/A",
         country: stripeAccount.country || "Unknown",
         payouts_enabled: stripeAccount.payouts_enabled,
@@ -993,5 +993,152 @@ export const getProductAnalytics = async (
     });
   } catch (error) {
     return next(error);
+  }
+};
+
+
+// Create product review
+interface CustomRequest extends Request {
+  user: {
+    id: string;
+  };
+}
+
+export const createProductReview = async (
+  req: CustomRequest,
+  res: Response,
+  next: NextFunction
+) => {
+
+  console.log('=== REVIEW ENDPOINT HIT ===');
+  console.log('Method:', req.method);
+  console.log('URL:', req.url);
+  console.log('Params:', req.params);
+  console.log('Body:', req.body);
+  try {
+    const { productId } = req.params;
+    const userId = req.user.id;
+    const { rating, review } = req.body;
+
+    // Check if order exists and is delivered
+    const order = await prisma.orders.findFirst({
+      where: {
+        userId,
+        items: {
+          some: {
+            productId
+          }
+        },
+        deliveryStatus: "Delivered"
+      }
+    });
+
+    if (!order) {
+      return next(new ValidationError("You can only review products you have purchased and received"));
+    }
+
+    // Check if user already reviewed this product
+    const existingReview = await prisma.productReviews.findUnique({
+      where: {
+        userId_productId: {
+          userId,
+          productId
+        }
+      }
+    });
+
+    if (existingReview) {
+      return next(new ValidationError("You have already reviewed this product"));
+    }
+
+    // Create review
+    const newReview = await prisma.productReviews.create({
+      data: {
+        userId,
+        productId,
+        rating,
+        review
+      }
+    });
+
+    // Update product average rating
+    const allReviews = await prisma.productReviews.findMany({
+      where: {
+        productId
+      },
+      select: {
+        rating: true
+      }
+    });
+
+    const averageRating = allReviews.reduce((acc, curr) => acc + curr.rating, 0) / allReviews.length;
+
+    await prisma.products.update({
+      where: {
+        id: productId
+      },
+      data: {
+        ratings: averageRating
+      }
+    });
+
+    res.status(201).json({
+      success: true,
+      review: newReview
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Get product reviews
+export const getProductReviews = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { productId } = req.params;
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+    const skip = (page - 1) * limit;
+
+    const [reviews, total] = await Promise.all([
+      prisma.productReviews.findMany({
+        where: {
+          productId
+        },
+        include: {
+          user: {
+            select: {
+              name: true,
+              avatar: true
+            }
+          }
+        },
+        skip,
+        take: limit,
+        orderBy: {
+          createdAt: 'desc'
+        }
+      }),
+      prisma.productReviews.count({
+        where: {
+          productId
+        }
+      })
+    ]);
+
+    res.status(200).json({
+      success: true,
+      reviews,
+      pagination: {
+        total,
+        page,
+        pages: Math.ceil(total / limit)
+      }
+    });
+  } catch (error) {
+    next(error);
   }
 };

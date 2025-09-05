@@ -18,19 +18,20 @@ model images {
 }
 
 model users {
-  id          String        @id @default(auto()) @map("_id") @db.ObjectId
-  name        String
-  email       String        @unique
-  role        String        @default("user")
-  password    String?
-  following   String[]
-  avatar      images?       @relation(fields: [imagesId], references: [id])
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
-  shopReviews shopReviews[]
-  imagesId    String?       @db.ObjectId
-  followings  followers[]
-  orders      orders[]
+  id             String           @id @default(auto()) @map("_id") @db.ObjectId
+  name           String
+  email          String           @unique
+  role           String           @default("user")
+  password       String?
+  following      String[]
+  avatar         images?          @relation(fields: [imagesId], references: [id])
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  shopReviews    shopReviews[]
+  productReviews productReviews[]
+  imagesId       String?          @db.ObjectId
+  followings     followers[]
+  orders         orders[]
 }
 
 model shopReviews {
@@ -155,6 +156,8 @@ model products {
   updatedAt             DateTime      @updatedAt
   shopId                String        @db.ObjectId
   Shop                  shops         @relation(fields: [shopId], references: [id])
+
+  productReviews productReviews[]
 }
 
 model userAnalytics {
@@ -304,4 +307,18 @@ model message {
   createdAt      DateTime @default(now())
 
   @@unique([conversationId, senderId, content, createdAt])
+}
+
+model productReviews {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String   @db.ObjectId
+  user      users    @relation(fields: [userId], references: [id])
+  productId String   @db.ObjectId
+  product   products @relation(fields: [productId], references: [id])
+  rating    Float
+  review    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, productId]) // One user can review a product only once
 }

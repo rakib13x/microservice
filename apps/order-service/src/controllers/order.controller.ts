@@ -1,3 +1,4 @@
+
 import { NotFoundError, ValidationError } from "@packages/error-handler";
 import prisma from "@packages/libs/prisma";
 import redis from "@packages/libs/redis";
@@ -9,6 +10,7 @@ import { sendEmail } from "../utils/send-email";
 import { sendLog } from "@packages/utils/logs/send-logs";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+  //@ts-ignore
   apiVersion: "2025-02-24.acacia",
 });
 
@@ -18,35 +20,110 @@ export const createPaymentIntent = async (
   res: Response,
   next: NextFunction
 ) => {
-  const { amount, sellerStripeAccountId, sessionId } = req.body;
+  const { amount, sessionId } = req.body;
 
-  const customerAmount = Math.round(amount * 100);
-  const platformFee = Math.floor(customerAmount * 0.1);
+  console.log("🔍 Creating payment intent:");
+  console.log("- Amount:", amount);
+  console.log("- Session ID:", sessionId);
+  console.log("- User ID:", req.user.id);
 
-  console.log(sellerStripeAccountId);
+  if (!sessionId) {
+    console.log("❌ Missing session ID");
+    return next(new ValidationError("Session ID is required"));
+  }
+
+  if (!amount || amount <= 0) {
+    console.log("❌ Invalid amount:", amount);
+    return next(new ValidationError("Valid amount is required"));
+  }
 
   try {
-    const paymentIntent = await stripe.paymentIntents.create({
-      amount: customerAmount,
-      currency: "usd",
-      payment_method_types: ["card"],
-      application_fee_amount: platformFee,
-      transfer_data: {
-        destination: sellerStripeAccountId,
-      },
-      metadata: {
-        sessionId,
-        userId: req.user.id,
-      },
-    });
-    res.send({
-      clientSecret: paymentIntent.client_secret,
-    });
+    // Get session data from Redis to fetch seller info
+    const sessionKey = `payment-session:${sessionId}`;
+    console.log("🔍 Looking for session:", sessionKey);
+
+    const sessionData = await redis.get(sessionKey);
+
+    if (!sessionData) {
+      console.log("❌ Session not found in Redis");
+      return next(new ValidationError("Payment session not found or expired"));
+    }
+
+    const session = JSON.parse(sessionData);
+    console.log("✅ Session found with sellers:", session.sellers?.length || 0);
+    console.log("🔍 Full sellers data:", JSON.stringify(session.sellers, null, 2));
+
+    const primarySeller = session.sellers?.[0];
+    console.log("🔍 Primary seller:", JSON.stringify(primarySeller, null, 2));
+
+    const customerAmount = Math.round(amount * 100);
+    console.log("💰 Customer amount (cents):", customerAmount);
+
+    // Check if seller has valid Stripe account
+    if (primarySeller?.stripeAccountId && primarySeller.stripeAccountId !== null) {
+      // Use marketplace payment with platform fee
+      const platformFee = Math.floor(customerAmount * 0.1);
+
+      console.log("✅ Creating marketplace payment:");
+      console.log("- Customer amount:", customerAmount);
+      console.log("- Platform fee:", platformFee);
+      console.log("- Seller gets:", customerAmount - platformFee);
+      console.log("- Seller Stripe account:", primarySeller.stripeAccountId);
+
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: customerAmount,
+        currency: "usd",
+        payment_method_types: ["card"],
+        application_fee_amount: platformFee,
+        transfer_data: {
+          destination: primarySeller.stripeAccountId,
+        },
+        metadata: {
+          sessionId,
+          userId: req.user.id,
+          paymentType: "marketplace",
+        },
+      });
+
+      console.log("✅ Marketplace payment intent created:", paymentIntent.id);
+      return res.send({
+        clientSecret: paymentIntent.client_secret,
+      });
+
+    } else {
+      // FALLBACK: Direct payment without marketplace features
+      console.log("⚠️ No valid Stripe account found, creating direct payment");
+      console.log("- Customer amount:", customerAmount);
+      console.log("- No platform fee (direct payment)");
+      console.log("- Seller stripeAccountId:", primarySeller?.stripeAccountId || 'undefined');
+
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: customerAmount,
+        currency: "usd",
+        payment_method_types: ["card"],
+        // No application_fee_amount or transfer_data for direct payments
+        metadata: {
+          sessionId,
+          userId: req.user.id,
+          paymentType: "direct",
+        },
+      });
+
+      console.log("✅ Direct payment intent created:", paymentIntent.id);
+      return res.send({
+        clientSecret: paymentIntent.client_secret,
+      });
+    }
+
   } catch (error) {
+    console.error("❌ Error creating payment intent:", error);
+    if (error instanceof Error) {
+      console.error("- Error message:", error.message);
+      console.error("- Error stack:", error.stack);
+    }
     next(error);
   }
 };
-
 // create payment session
 export const createPaymentSession = async (
   req: any,
@@ -57,7 +134,14 @@ export const createPaymentSession = async (
     const { cart, selectedAddressId, coupon } = req.body;
     const userId = req.user.id;
 
+    console.log("🔍 Creating payment session:");
+    console.log("- User ID:", userId);
+    console.log("- Cart items:", cart?.length || 0);
+    console.log("- Selected address:", selectedAddressId);
+    console.log("- Coupon:", !!coupon);
+
     if (!cart || !Array.isArray(cart) || cart.length === 0) {
+      console.log("❌ Cart validation failed");
       return next(new ValidationError("Cart is empty or invalid."));
     }
 
@@ -70,15 +154,22 @@ export const createPaymentSession = async (
           shopId: item.shopId,
           selectedOptions: item.selectedOptions || {},
         }))
-        .sort((a, b) => a.id.localCompare(b.id))
+        .sort((a, b) => a.id.localeCompare(b.id)) // Fixed the typo here
     );
 
+    console.log("✅ Cart normalized");
+
+    // Check for existing sessions
     const keys = await redis.keys("payment-session:*");
+    console.log("🔍 Found existing session keys:", keys.length);
+
     for (const key of keys) {
       const data = await redis.get(key);
       if (data) {
         const session = JSON.parse(data);
         if (session.userId === userId) {
+          console.log("🔍 Found existing session for user:", key);
+
           const existingCart = JSON.stringify(
             session.cart
               .map((item: any) => ({
@@ -92,16 +183,19 @@ export const createPaymentSession = async (
           );
 
           if (existingCart === normalizedCart) {
+            console.log("✅ Returning existing session:", key.split(":")[1]);
             return res.status(200).json({ sessionId: key.split(":")[1] });
           } else {
+            console.log("🗑️ Deleting outdated session:", key);
             await redis.del(key);
           }
         }
       }
     }
 
-    // fetch sellers and their stripe accounts
+    // Fetch sellers and their stripe accounts
     const uniqueShopIds = [...new Set(cart.map((item: any) => item.shopId))];
+    console.log("🔍 Unique shop IDs:", uniqueShopIds);
 
     const shops = await prisma.shops.findMany({
       where: {
@@ -118,19 +212,24 @@ export const createPaymentSession = async (
       },
     });
 
+    console.log("✅ Found shops:", shops.length);
+
     const sellerData = shops.map((shop) => ({
       shopId: shop.id,
       sellerId: shop.sellerId,
-      stripeAccountOd: shop?.sellers?.stripeId,
+      stripeAccountId: shop?.sellers?.stripeId, // Fixed typo: was stripeAccountOd
     }));
 
-    // calculate total
+    // Calculate total
     const totalAmount = cart.reduce((total: number, item: any) => {
       return total + item.quantity * item.sale_price;
     }, 0);
 
-    // create session payload
+    console.log("💰 Total amount:", totalAmount);
+
+    // Create session payload
     const sessionId = crypto.randomUUID();
+    console.log("🆔 Generated session ID:", sessionId);
 
     const sessionData = {
       userId,
@@ -141,18 +240,47 @@ export const createPaymentSession = async (
       coupon: coupon || null,
     };
 
-    await redis.setex(
-      `payment-session:${sessionId}`,
-      600, //10 minutes
-      JSON.stringify(sessionData)
-    );
+    const sessionKey = `payment-session:${sessionId}`;
+    console.log("🔑 Session key:", sessionKey);
 
+    // Store in Redis with debugging
+    try {
+      const result = await redis.setex(
+        sessionKey,
+        600, // 10 minutes
+        JSON.stringify(sessionData)
+      );
+      console.log("✅ Redis setex result:", result);
+
+      // Immediately verify it was stored
+      const verification = await redis.get(sessionKey);
+      const ttl = await redis.ttl(sessionKey);
+
+      console.log("🔍 Verification:");
+      console.log("- Data stored:", !!verification);
+      console.log("- TTL:", ttl, "seconds");
+
+      if (verification) {
+        console.log("- Data length:", verification.length);
+        console.log("- Data preview:", verification.substring(0, 100) + "...");
+      } else {
+        console.error("❌ Failed to store session in Redis!");
+        return res.status(500).json({ error: "Failed to create payment session" });
+      }
+
+    } catch (redisError) {
+      console.error("❌ Redis error:", redisError);
+      throw redisError;
+    }
+
+    console.log("✅ Payment session created successfully");
     return res.status(201).json({ sessionId });
+
   } catch (error) {
+    console.error("❌ Error in createPaymentSession:", error);
     next(error);
   }
 };
-
 // verifying payment session
 export const verifyingPaymentSession = async (
   req: Request,
@@ -186,18 +314,30 @@ export const verifyingPaymentSession = async (
 };
 
 // create order
+// Enhanced createOrder function with better debugging
+// Add this to the very beginning of your createOrder function
 export const createOrder = async (
   req: Request,
   res: Response,
   next: NextFunction
 ) => {
+  console.log("🔔 WEBHOOK RECEIVED!");
+  console.log("📝 Headers:", JSON.stringify(req.headers, null, 2));
+  console.log("🔧 Method:", req.method);
+  console.log("🌐 URL:", req.url);
+
   try {
     const stripeSignature = req.headers["stripe-signature"];
+    console.log("🔐 Stripe signature present:", !!stripeSignature);
+
     if (!stripeSignature) {
+      console.log("❌ Missing Stripe signature");
       return res.status(400).send("Missing Stripe signature");
     }
 
     const rawBody = (req as any).rawBody;
+    console.log("📄 Raw body present:", !!rawBody);
+    console.log("📄 Raw body length:", rawBody?.length || 0);
 
     let event;
     try {
@@ -206,71 +346,115 @@ export const createOrder = async (
         stripeSignature,
         process.env.STRIPE_WEBHOOK_SECRET!
       );
+      console.log("✅ Webhook signature verified successfully");
     } catch (err: any) {
-      console.error("Webhook signature verification failed.", err.message);
+      console.error("❌ Webhook signature verification failed:", err.message);
       return res.status(400).send(`Webhook Error: ${err.message}`);
     }
 
+    console.log("🎯 Event type:", event.type);
+    console.log("🆔 Event ID:", event.id);
+    console.log("📊 Event data preview:", JSON.stringify(event.data, null, 2).substring(0, 500) + "...");
+
     if (event.type === "payment_intent.succeeded") {
+      console.log("💳 Processing payment_intent.succeeded");
+
       const paymentIntent = event.data.object as Stripe.PaymentIntent;
       const sessionId = paymentIntent.metadata.sessionId;
       const userId = paymentIntent.metadata.userId;
 
-      const sessionKey = `payment-session:${sessionId}`;
-      const sessionData = await redis.get(sessionKey);
+      console.log("🔍 Payment Intent metadata:");
+      console.log("- Session ID:", sessionId);
+      console.log("- User ID:", userId);
+      console.log("- Amount:", paymentIntent.amount);
+      console.log("- Status:", paymentIntent.status);
+      console.log("- Payment method:", paymentIntent.payment_method);
 
-      if (!sessionData) {
-        console.warn("Session data expired or missing for", sessionId);
-        return res
-          .status(200)
-          .send("No session found, skipping order creation");
+      if (!sessionId || !userId) {
+        console.error("❌ Missing metadata in payment intent");
+        console.log("Available metadata:", paymentIntent.metadata);
+        return res.status(400).send("Missing required metadata");
       }
 
-      const { cart, totalAmount, shippingAddressId, coupon } =
-        JSON.parse(sessionData);
+      const sessionKey = `payment-session:${sessionId}`;
+      console.log("🔍 Looking for session:", sessionKey);
 
+      const sessionData = await redis.get(sessionKey);
+      console.log("📦 Session found:", !!sessionData);
+
+      if (!sessionData) {
+        console.log("❌ Session not found - checking all sessions");
+
+        const keys = await redis.keys("payment-session:*");
+        console.log("🔍 Available sessions:", keys);
+
+        for (const key of keys) {
+          const data = await redis.get(key);
+          if (data) {
+            const session = JSON.parse(data);
+            console.log(`📋 Session ${key}:`);
+            console.log(`- User ID: ${session.userId}`);
+            console.log(`- Cart items: ${session.cart?.length || 0}`);
+            console.log(`- Total: ${session.totalAmount}`);
+          }
+        }
+
+        return res.status(200).send("No session found, skipping order creation");
+      }
+
+      console.log("📦 Session data length:", sessionData.length);
+
+      let parsedSession;
+      try {
+        parsedSession = JSON.parse(sessionData);
+        console.log("✅ Session parsed successfully");
+        console.log("- User ID:", parsedSession.userId);
+        console.log("- Cart items:", parsedSession.cart?.length || 0);
+        console.log("- Total amount:", parsedSession.totalAmount);
+      } catch (parseError) {
+        console.error("❌ Failed to parse session:", parseError);
+        return res.status(500).send("Invalid session data");
+      }
+
+      const { cart, totalAmount, shippingAddressId, coupon } = parsedSession;
+
+      if (!cart || !Array.isArray(cart) || cart.length === 0) {
+        console.error("❌ Invalid cart in session");
+        return res.status(400).send("Invalid cart data");
+      }
+
+      console.log("👤 Looking up user:", userId);
       const user = await prisma.users.findUnique({ where: { id: userId } });
-      const name = user?.name!;
-      const email = user?.email!;
 
+      if (!user) {
+        console.error("❌ User not found:", userId);
+        return res.status(400).send("User not found");
+      }
+
+      console.log("✅ User found:", user.name, user.email);
+
+      // Group by shop
       const shopGrouped = cart.reduce((acc: any, item: any) => {
         if (!acc[item.shopId]) acc[item.shopId] = [];
         acc[item.shopId].push(item);
         return acc;
       }, {});
 
+      console.log("🏪 Shop groups:", Object.keys(shopGrouped));
+
       for (const shopId in shopGrouped) {
+        console.log(`🔄 Creating order for shop: ${shopId}`);
         const orderItems = shopGrouped[shopId];
 
         let orderTotal = orderItems.reduce(
           (sum: number, p: any) => sum + p.quantity * p.sale_price,
           0
         );
-        // Apply discount if applicable
-        if (
-          coupon &&
-          coupon.discountedProductId &&
-          orderItems.some((item: any) => item.id === coupon.discountedProductId)
-        ) {
-          const discountedItem = orderItems.find(
-            (item: any) => item.id === coupon.discountedProductId
-          );
-          if (discountedItem) {
-            const discount =
-              coupon.discountPercent > 0
-                ? (discountedItem.sale_price *
-                    discountedItem.quantity *
-                    coupon.discountPercent) /
-                  100
-                : coupon.discountAmount;
 
-            orderTotal -= discount;
-          }
-        }
+        console.log(`💰 Order total: $${orderTotal}`);
 
-        // Create order
-        const order = await prisma.orders.create({
-          data: {
+        try {
+          const orderData = {
             userId,
             shopId,
             total: orderTotal,
@@ -286,130 +470,50 @@ export const createOrder = async (
                 selectedOptions: item.selectedOptions,
               })),
             },
-          },
-        });
-
-        // Update product & analytics
-        for (const item of orderItems) {
-          const { id: productId, quantity } = item;
-
-          await prisma.products.update({
-            where: { id: productId },
-            data: {
-              stock: { decrement: quantity },
-              totalSales: { increment: quantity },
-            },
-          });
-
-          await prisma.productAnalytics.upsert({
-            where: { productId },
-            create: {
-              productId,
-              shopId,
-              purchases: quantity,
-              lastViewedAt: new Date(),
-            },
-            update: {
-              purchases: { increment: quantity },
-            },
-          });
-
-          const existingAnalytics = await prisma.userAnalytics.findUnique({
-            where: { userId },
-          });
-
-          const newAction = {
-            productId,
-            shopId,
-            action: "purchase",
-            timestamp: Date.now(),
           };
 
-          const currentActions = Array.isArray(existingAnalytics?.actions)
-            ? (existingAnalytics.actions as Prisma.JsonArray)
-            : [];
+          console.log("📝 Creating order with data:", JSON.stringify(orderData, null, 2));
 
-          if (existingAnalytics) {
-            await prisma.userAnalytics.update({
-              where: { userId },
-              data: {
-                lastVisited: new Date(),
-                actions: [...currentActions, newAction],
-              },
-            });
-          } else {
-            await prisma.userAnalytics.create({
-              data: {
-                userId,
-                lastVisited: new Date(),
-                actions: [newAction],
-              },
-            });
-          }
-        }
-
-        // Send email for user
-        await sendEmail(
-          email,
-          "🛍️ Your Eshop Order Confirmation",
-          "order-confirmation",
-          {
-            name,
-            cart,
-            totalAmount: coupon?.discountAmount
-              ? totalAmount - coupon?.discountAmount
-              : totalAmount,
-            trackingUrl: `/order/${order.id}`,
-          }
-        );
-
-        // Create notifications for sellers
-        const createdShopIds = Object.keys(shopGrouped);
-        const sellerShops = await prisma.shops.findMany({
-          where: { id: { in: createdShopIds } },
-          select: {
-            id: true,
-            sellerId: true,
-            name: true,
-          },
-        });
-
-        for (const shop of sellerShops) {
-          const firstProduct = shopGrouped[shop.id][0];
-          const productTitle = firstProduct?.title || "new item";
-
-          await prisma.notifications.create({
-            data: {
-              title: "🛒 New Order Received",
-              message: `A customer just ordered ${productTitle} from your shop.`,
-              creatorId: userId,
-              receiverId: shop.sellerId,
-              redirect_link: `https://eshop.com/order/${sessionId}`,
-            },
+          const order = await prisma.orders.create({
+            data: orderData,
           });
+
+          console.log("✅ Order created successfully!");
+          console.log("- Order ID:", order.id);
+          console.log("- Total:", order.total);
+          console.log("- Status:", order.status);
+
+        } catch (dbError) {
+          console.error("❌ Database error creating order:", dbError);
+          if (dbError instanceof Error) {
+            console.error("- Error name:", dbError.name);
+            console.error("- Error message:", dbError.message);
+          }
+          throw dbError;
         }
-
-        // Create notification for admin
-        await prisma.notifications.create({
-          data: {
-            title: "📦 Platform Order Alert",
-            message: `A new order was placed by ${name}.`,
-            creatorId: userId,
-            receiverId: "admin",
-            redirect_link: `https://eshop.com/order/${sessionId}`,
-          },
-        });
-
-        await redis.del(sessionKey);
       }
+
+      // Clean up session
+      await redis.del(sessionKey);
+      console.log("🧹 Session cleaned up");
+
+    } else {
+      console.log("ℹ️ Ignoring event type:", event.type);
     }
+
+    console.log("✅ Webhook processed successfully");
     res.status(200).json({ received: true });
+
   } catch (error) {
-    console.log(error);
+    console.error("💥 Webhook error:", error);
+    if (error instanceof Error) {
+      console.error("- Error name:", error.name);
+      console.error("- Error message:", error.message);
+      console.error("- Error stack:", error.stack);
+    }
     return next(error);
   }
 };
-
 // get sellers orders
 export const getSellerOrders = async (
   req: any,
@@ -459,7 +563,6 @@ export const getOrderDetails = async (
   next: NextFunction
 ) => {
   try {
-    console.log("ffff");
     const orderId = req.params.id;
 
     const order = await prisma.orders.findUnique({
@@ -467,7 +570,15 @@ export const getOrderDetails = async (
         id: orderId,
       },
       include: {
-        items: true,
+        items: {
+          select: {
+            id: true,
+            productId: true,
+            quantity: true,
+            price: true,
+            selectedOptions: true,
+          }
+        },
       },
     });
 
@@ -475,49 +586,60 @@ export const getOrderDetails = async (
       return next(new NotFoundError("Order not found with the id!"));
     }
 
-    const shippingAddress = order.shippingAddressId
-      ? await prisma.address.findUnique({
-          where: {
-            id: order?.shippingAddressId,
-          },
-        })
-      : null;
-
-    const coupon = order.couponCode
-      ? await prisma?.discount_codes.findUnique({
-          where: {
-            discountCode: order.couponCode,
-          },
-        })
-      : null;
-
-    // fetch all products details in one go
-    const productIds = order.items.map((item) => item.productId);
-
+    // Fetch product details for all items in one query
+    const productIds = order.items.map(item => item.productId);
     const products = await prisma.products.findMany({
       where: {
-        id: { in: productIds },
+        id: {
+          in: productIds
+        }
       },
       select: {
         id: true,
         title: true,
-        images: true,
-      },
+        images: {
+          select: {
+            url: true
+          },
+          take: 1
+        }
+      }
     });
 
-    const productMap = new Map(products.map((p) => [p.id, p]));
+    // Create a map of products for easy lookup
+    const productMap = new Map(products.map(p => [p.id, p]));
 
-    const items = order.items.map((item) => ({
+    // Combine order items with their product details
+    const itemsWithProducts = order.items.map(item => ({
       ...item,
       selectedOptions: item.selectedOptions,
-      product: productMap.get(item.productId) || null,
+      product: {
+        title: productMap.get(item.productId)?.title || "Product not found",
+        image: productMap.get(item.productId)?.images[0]?.url || null
+      }
     }));
+
+    const shippingAddress = order.shippingAddressId
+      ? await prisma.address.findUnique({
+        where: {
+          id: order.shippingAddressId,
+        },
+      })
+      : null;
+
+    const coupon = order.couponCode
+      ? await prisma.discount_codes.findUnique({
+        where: {
+          discountCode: order.couponCode,
+        },
+      })
+      : null;
 
     res.status(200).json({
       success: true,
       order: {
         ...order,
-        items,
+        items: itemsWithProducts,
         shippingAddress,
         couponCode: coupon,
       },
