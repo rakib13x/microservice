@@ -6,9 +6,11 @@
     "importHelpers": true,
     "isolatedModules": true,
     "baseUrl": ".",
+    
     "lib": [
       "es2022"
     ],
+    "typeRoots": ["./types", "./node_modules/@types"],
     "module": "nodenext",
     "moduleResolution": "nodenext",
     "noEmitOnError": false,
@@ -20,9 +22,21 @@
     "strict": false,
     "target": "es2022",
     "paths": {
-      "@packages/*": [
-        "packages/*"
-      ]
+      "@packages/*": ["packages/*"],
+      "@packages/libs/redis": ["packages/libs/redis/index.ts"],
+      "@packages/libs/redis/*": ["packages/libs/redis/*"],
+      "@packages/libs/prisma": ["packages/libs/prisma/index.ts"],
+      "@packages/libs/prisma/*": ["packages/libs/prisma/*"],
+      "@packages/libs/imagekit": ["packages/libs/imagekit/index.ts"],
+      "@packages/libs/imagekit/*": ["packages/libs/imagekit/*"],
+      "@packages/utils/kafka": ["packages/utils/kafka/index.ts"],
+      "@packages/utils/kafka/*": ["packages/utils/kafka/*"],
+      "@packages/utils/logs": ["packages/utils/logs/index.ts"],
+      "@packages/utils/logs/*": ["packages/utils/logs/*"],
+      "@packages/error-handler": ["packages/error-handler/index.ts"],
+      "@packages/error-handler/*": ["packages/error-handler/*"],
+      "@packages/middleware": ["packages/middleware/index.ts"],
+      "@packages/middleware/*": ["packages/middleware/*"]
     }
   }
 }

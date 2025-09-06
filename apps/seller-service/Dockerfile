@@ -17,11 +17,11 @@ COPY packages/utils/logs ./packages/utils/logs
 COPY prisma ./prisma
 
 # Install pnpm and dependencies
-RUN corepack enable && corepack prepare pnpm@8.10.2 --activate
+RUN corepack enable && corepack prepare pnpm@10.10.0 --activate
 RUN pnpm install --prod
 
 # Copy built application
-COPY apps/seller-service/dist ./dist
+COPY apps/seller-service ./dist
 COPY apps/seller-service/entrypoint.sh ./entrypoint.sh
 
 # ---- Production Stage ----

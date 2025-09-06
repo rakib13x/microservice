@@ -16,11 +16,11 @@ COPY packages/error-handler ./packages/error-handler
 COPY prisma ./prisma
 
 # Install pnpm and dependencies
-RUN corepack enable && corepack prepare pnpm@8.10.2 --activate
+RUN corepack enable && corepack prepare pnpm@10.10.0 --activate
 RUN pnpm install --prod
 
 # Copy built application
-COPY apps/product-service/dist ./dist
+COPY apps/product-service ./dist
 COPY apps/product-service/entrypoint.sh ./entrypoint.sh
 
 # ---- Production Stage ----

@@ -3,7 +3,7 @@ FROM node:20-alpine AS deps
 WORKDIR /app
 
 # Install pnpm
-RUN corepack enable && corepack prepare pnpm@8.10.2 --activate
+RUN corepack enable && corepack prepare pnpm@10.10.0 --activate
 
 # Copy workspace files
 COPY pnpm-workspace.yaml ./
@@ -24,7 +24,7 @@ FROM node:20-alpine AS builder
 WORKDIR /app
 
 # Install pnpm
-RUN corepack enable && corepack prepare pnpm@8.10.2 --activate
+RUN corepack enable && corepack prepare pnpm@10.10.0 --activate
 
 #copy dependencies
 COPY --from=deps /app/node_modules ./node_modules
@@ -50,9 +50,9 @@ ENV NX_SKIP_NX_CACHE=true
 ENV NEXT_TELEMETRY_DISABLED=1
 
 # ADD NEXT.JS ENVIRONMENT VARIABLES (BEFORE BUILD)
-ENV NEXT_PUBLIC_SERVER_URI=https://shondhane.com
-ENV NEXT_PUBLIC_CHATTING_WEBSOCKET_URI=wss://shondhane.com/ws-chatting
-ENV NEXT_PUBLIC_USER_UI_LINK=https://shondhane.com
+ENV NEXT_PUBLIC_SERVER_URI=https://ezcommerce.store
+ENV NEXT_PUBLIC_CHATTING_WEBSOCKET_URI=wss://ezcommerce.store/ws-chatting
+ENV NEXT_PUBLIC_USER_UI_LINK=https://www.ezcommerce.store
 
 # Generate Prisma client before building
 RUN npx prisma generate
