@@ -15,13 +15,13 @@ COPY packages/utils/kafka ./packages/utils/kafka
 
 COPY prisma ./prisma
 
-RUN corepack enable && corepack prepare pnpm@8.10.2 --activate
+RUN corepack enable && corepack prepare pnpm@10.10.0 --activate
 RUN pnpm install --prod
 
 
 RUN npx prisma generate
 
-COPY apps/chatting-service/dist ./dist
+COPY apps/chatting-service ./dist
 
 # ---- Production Stage ----
 FROM node:20-alpine

@@ -8,13 +8,13 @@ COPY pnpm-lock.yaml ./
 COPY pnpm-workspace.yaml ./
 COPY prisma ./prisma
 
-RUN corepack enable && corepack prepare pnpm@8.10.2 --activate
+RUN corepack enable && corepack prepare pnpm@10.10.0 --activate
 RUN pnpm install --prod
 
 
 RUN npx prisma generate
 
-COPY apps/api-gateway/dist ./dist
+COPY apps/api-gateway ./dist
 
 # ---- Production Stage ----
 FROM node:20-alpine
