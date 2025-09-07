@@ -29,10 +29,10 @@ echo "Waiting for services to be healthy..."
 
 # Function to check if containers are running
 check_containers() {
-    local nginx_status=$(docker ps --filter "name=eshop-nginx-1" --format "{{.Status}}" | grep -c "Up" || echo "0")
-    local gateway_status=$(docker ps --filter "name=eshop-api-gateway-1" --format "{{.Status}}" | grep -c "Up" || echo "0")
+    local all_up=$(docker ps --filter "name=microservice-" --format "{{.Status}}" | grep -c "Up")
+    local total=$(docker ps --filter "name=microservice-" --format "{{.Names}}" | wc -l)
     
-    if [ "$nginx_status" = "1" ] && [ "$gateway_status" = "1" ]; then
+    if [ "$all_up" -eq "$total" ]; then
         return 0
     else
         return 1
@@ -41,7 +41,7 @@ check_containers() {
 
 # Function to check if health endpoint responds
 check_health_endpoint() {
-    curl -f -k -s --max-time 5 https://shondhane.com/gateway-health > /dev/null 2>&1
+    curl -f -k -s --max-time 5 https://ezcommerce.store/gateway-health > /dev/null 2>&1
     return $?
 }
 
@@ -86,7 +86,7 @@ fi
 echo "Verifying deployment..."
 
 # Check 1: HTTPS endpoint (primary)
-if curl -f -k https://shondhane.com/gateway-health > /dev/null 2>&1; then
+if curl -f -k https://ezcommerce.store/gateway-health > /dev/null 2>&1; then
     echo "✅ HTTPS endpoint working!"
     HTTPS_OK=true
 else
@@ -96,7 +96,7 @@ fi
 
 # Check 2: Direct IP with HTTPS (fallback)
 if [ "$HTTPS_OK" = false ]; then
-    if curl -f -k -H "Host: shondhane.com" https://3.239.91.208/gateway-health > /dev/null 2>&1; then
+    if curl -f -k -H "Host: ezcommerce.store" https://3.239.91.208/gateway-health > /dev/null 2>&1; then
         echo "✅ Direct HTTPS access working!"
         HTTPS_OK=true
     else
@@ -136,10 +136,10 @@ fi
 if [ "$HTTPS_OK" = true ]; then
     echo ""
     echo "🎉 Deployment successful!"
-    echo "🌐 Site available at: https://shondhane.com"
-    echo "🔧 API Health: https://shondhane.com/gateway-health"
-    echo "👥 Sellers: https://sellers.shondhane.com"
-    echo "⚙️  Admin: https://admin.shondhane.com"
+    echo "🌐 Site available at: https://ezcommerce.store"
+    echo "🔧 API Health: https://ezcommerce.store/gateway-health"
+    echo "👥 Sellers: https://sellers.ezcommerce.store"
+    echo "⚙️  Admin: https://admin.ezcommerce.store"
 else
     echo ""
     echo "❌ Deployment verification failed!"
@@ -147,6 +147,6 @@ else
     echo "  docker ps | grep eshop"
     echo "  docker logs eshop-nginx-1 --tail 20"
     echo "  docker logs eshop-api-gateway-1 --tail 20"
-    echo "  curl -v https://shondhane.com/gateway-health"
+    echo "  curl -v https://ezcommerce.store/gateway-health"
     exit 1
 fi
