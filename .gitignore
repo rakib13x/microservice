@@ -9,6 +9,7 @@ out-tsc
 node_modules
 
 eshop-key.pem
+new-e-shop.pem
 
 # IDEs and editors
 /.idea
