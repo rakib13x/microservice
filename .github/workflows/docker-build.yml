@@ -218,7 +218,7 @@ jobs:
         if: steps.check-image.outputs.exists == 'false' || needs.detect-changes.outputs.has-backend-changes == 'true'
         run: |
           # Setup pnpm
-          npm install -g pnpm@8.10.2
+          npm install -g pnpm@10.10.0
           
           # Create .npmrc
           echo "auto-install-peers=true" > .npmrc
