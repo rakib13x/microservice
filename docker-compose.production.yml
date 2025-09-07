@@ -1,36 +1,26 @@
 services:
-  # Load Balancer (Nginx)
   nginx:
     image: nginx:alpine
     ports:
       - "80:80"
       - "443:443"
     volumes:
-       - ./nginx.conf:/etc/nginx/nginx.conf
-       - /etc/letsencrypt:/etc/letsencrypt:ro
-       - /var/lib/letsencrypt:/var/lib/letsencrypt:ro
-    nginx:
-  image: nginx:alpine
-  ports:
-    - "80:80"
-    - "443:443"
-  volumes:
-     - ./nginx.conf:/etc/nginx/nginx.conf
-     - /etc/letsencrypt:/etc/letsencrypt:ro
-     - /var/lib/letsencrypt:/var/lib/letsencrypt:ro
-  depends_on:
-    api-gateway:
-      condition: service_healthy
-    user-ui:
-      condition: service_healthy
-    seller-ui:
-      condition: service_healthy
-    admin-ui:
-      condition: service_healthy
-    chatting-service:
-      condition: service_healthy
-    logger-service:
-      condition: service_healthy
+      - ./nginx.conf:/etc/nginx/nginx.conf
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+      - /var/lib/letsencrypt:/var/lib/letsencrypt:ro
+    depends_on:
+      api-gateway:
+        condition: service_healthy
+      user-ui:
+        condition: service_healthy
+      seller-ui:
+        condition: service_healthy
+      admin-ui:
+        condition: service_healthy
+      chatting-service:
+        condition: service_healthy
+      logger-service:
+        condition: service_healthy
     restart: unless-stopped
 
   # Zookeeper for Kafka
