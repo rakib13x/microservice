@@ -14,12 +14,12 @@ const isProduction = process.env.NODE_ENV === "production";
 // Production-safe CORS configuration
 const allowedOrigins = isProduction
   ? [
-      "https://shondhane.com",
-      "https://sellers.shondhane.com",
-      "https://admin.shondhane.com",
-      "http://nginx",
-      "http://localhost",
-    ]
+    "https://ezcommerce.store",
+    "https://sellers.ezcommerce.store",
+    "https://admin.ezcommerce.store",
+    "http://nginx",
+    "http://localhost",
+  ]
   : ["http://localhost:3000", "http://localhost:3001", "http://localhost:3002"];
 
 app.use(
@@ -95,10 +95,10 @@ const createProxyMiddleware = (serviceUrl: string, serviceName: string) => {
         headersSent: any;
         status: (arg0: number) => {
           (): any;
-          new (): any;
+          new(): any;
           json: {
             (arg0: { error: string; service: string; timestamp: string }): void;
-            new (): any;
+            new(): any;
           };
         };
       },

@@ -93,7 +93,7 @@ services:
         condition: service_healthy
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/gateway-health"]
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:8080/gateway-health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -283,6 +283,11 @@ services:
       - NEXT_PUBLIC_SELLER_SERVER_URI=https://sellers.ezcommerce.store
       - NEXT_PUBLIC_STRIPE_PUBLIC_KEY=pk_test_51OFhwZJNaoEy3rJ7Sk85sFffgSk00kbxLXIJLuSQvcNBi6ID4K0Jb9I7FjiYcGLIInnyrgCtALWms8C6xMwjCtQ500ATLnxLG9
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
     deploy:
       resources:
         limits:
@@ -300,6 +305,11 @@ services:
       - NEXT_PUBLIC_CHATTING_WEBSOCKET_URI=wss://ezcommerce.store/ws-chatting
       - NEXT_PUBLIC_USER_UI_LINK=https://www.ezcommerce.store
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
     deploy:
       resources:
         limits:
@@ -316,6 +326,11 @@ services:
       - NEXT_PUBLIC_USER_UI_LINK=https://www.ezcommerce.store
       - NEXT_PUBLIC_SOCKET_URI=ws://ezcommerce.store/ws-admin
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3002"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
     deploy:
       resources:
         limits:
