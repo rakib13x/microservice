@@ -287,7 +287,8 @@ services:
       test: ["CMD-SHELL", "wget -qO- http://localhost:3000 || exit 1"]
       interval: 30s
       timeout: 10s
-      retries: 3
+      retries: 10
+      start_period: 60s
     deploy:
       resources:
         limits:
@@ -309,7 +310,8 @@ services:
       test: ["CMD-SHELL", "wget -qO- http://localhost:3001 || exit 1"]
       interval: 30s
       timeout: 10s
-      retries: 3
+      retries: 10
+      start_period: 60s
     deploy:
       resources:
         limits:
@@ -330,7 +332,8 @@ services:
       test: ["CMD-SHELL", "wget -qO- http://localhost:3002 || exit 1"]
       interval: 30s
       timeout: 10s
-      retries: 3
+      retries: 10
+      start_period: 60s
     deploy:
       resources:
         limits:
