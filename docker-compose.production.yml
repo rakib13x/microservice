@@ -116,7 +116,7 @@ services:
         condition: service_healthy
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:6001/"]
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:6001/ || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -211,7 +211,7 @@ services:
         condition: service_healthy
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:6006/health"]
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:6006/health || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -286,7 +286,7 @@ services:
       - NEXT_PUBLIC_STRIPE_PUBLIC_KEY=pk_test_51OFhwZJNaoEy3rJ7Sk85sFffgSk00kbxLXIJLuSQvcNBi6ID4K0Jb9I7FjiYcGLIInnyrgCtALWms8C6xMwjCtQ500ATLnxLG9
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000"]
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:3000 || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 10
@@ -311,7 +311,7 @@ services:
       - NEXT_PUBLIC_USER_UI_LINK=https://www.ezcommerce.store
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3001"]
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:3001 || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 10
@@ -335,7 +335,7 @@ services:
       - NEXT_PUBLIC_SOCKET_URI=ws://ezcommerce.store/ws-admin
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3002"]
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:3002 || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 10
