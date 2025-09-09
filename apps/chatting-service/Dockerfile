@@ -1,52 +1,47 @@
 # ---- Build Stage ----
 FROM node:20-alpine AS builder
-
 WORKDIR /app
 
-COPY apps/chatting-service/package.json ./
-COPY pnpm-lock.yaml ./
-COPY pnpm-workspace.yaml ./
-
-# Copy workspace packages
-COPY packages/error-handler ./packages/error-handler
-COPY packages/libs/prisma ./packages/libs/prisma
-COPY packages/libs/redis ./packages/libs/redis
-COPY packages/utils/kafka ./packages/utils/kafka
-
+# Copy root configs + tsconfigs
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./ 
+COPY tsconfig.base.json tsconfig.json ./
 COPY prisma ./prisma
+COPY packages ./packages
 
+# Enable pnpm
 RUN corepack enable && corepack prepare pnpm@10.10.0 --activate
-RUN pnpm install --prod
 
+# Install root deps
+RUN pnpm install --frozen-lockfile
 
-RUN npx prisma generate
+# Copy chatting-service app
+COPY apps/chatting-service ./apps/chatting-service
 
-COPY apps/chatting-service ./dist
+# Install app-specific deps
+RUN pnpm --filter chatting-service install --frozen-lockfile
+
+# Generate Prisma client
+RUN pnpm --filter chatting-service prisma generate
+
+# Build chatting-service
+RUN pnpm --filter chatting-service run build -- --skip-nx-cache
 
 # ---- Production Stage ----
 FROM node:20-alpine
-
-# Install dumb-init for proper signal handling
+WORKDIR /app
 RUN apk add --no-cache dumb-init
 
-# Create nodejs user
-RUN addgroup -g 1001 -S nodejs
-RUN adduser -S nodejs -u 1001
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/apps/chatting-service/dist ./dist
+COPY --from=builder /app/apps/chatting-service/package.json ./
+COPY --from=builder /app/prisma ./prisma
+COPY --from=builder /app/packages ./packages
 
-WORKDIR /app
 
-COPY --from=builder --chown=nodejs:nodejs /app/node_modules ./node_modules
-COPY --from=builder --chown=nodejs:nodejs /app/dist ./dist
-COPY --from=builder --chown=nodejs:nodejs /app/package.json ./package.json
-COPY --from=builder --chown=nodejs:nodejs /app/prisma ./prisma
-COPY --from=builder --chown=nodejs:nodejs /app/packages ./packages
-
-USER nodejs
+RUN npx prisma generate
+# Use the official non-root user that exists in the node image
+USER node
 
 EXPOSE 6006
-
-ENV DOCKER_ENV=true
-ENV NODE_ENV=production
-
 ENTRYPOINT ["dumb-init", "--"]
 CMD ["node", "dist/main.js"]
