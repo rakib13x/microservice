@@ -313,8 +313,3 @@ services:
 networks:
   default:
     name: eshop-network
-
-
-
-
-
