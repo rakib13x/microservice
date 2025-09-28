@@ -3,40 +3,49 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-COPY apps/kafka-service/package.json ./
-COPY pnpm-lock.yaml ./
-COPY pnpm-workspace.yaml ./
+# Copy root configs
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml nx.json tsconfig.base.json ./
 COPY prisma ./prisma
+COPY packages ./packages
+COPY apps/kafka-service ./apps/kafka-service
 
-# Copy required packages
-COPY packages/utils/kafka ./packages/utils/kafka
-COPY packages/libs/prisma ./packages/libs/prisma
-
+# Install dependencies and build
 RUN corepack enable && corepack prepare pnpm@10.10.0 --activate
-RUN pnpm install --prod
-
-
+RUN pnpm install
 RUN npx prisma generate
-
-COPY apps/kafka-service ./dist
+RUN pnpm --filter kafka-service run build
 
 # ---- Production Stage ----
 FROM node:20-alpine
 
 WORKDIR /app
 
-# Install OpenSSL for Prisma
-RUN apk add --no-cache openssl
+RUN apk add --no-cache dumb-init openssl
 
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/package.json ./
-COPY --from=builder /app/prisma ./prisma
-COPY --from=builder /app/packages ./packages
+# Create non-root user
+RUN addgroup -g 1001 -S nodejs && adduser -S nodejs -u 1001
+
+# Install production dependencies AS ROOT
+COPY --from=builder /app/package.json ./package.json
+COPY --from=builder /app/pnpm-lock.yaml ./pnpm-lock.yaml
+RUN corepack enable && corepack prepare pnpm@10.10.0 --activate && pnpm install --prod
+
+# Copy built application
+COPY --from=builder --chown=nodejs:nodejs /app/apps/kafka-service/dist ./dist
+COPY --from=builder --chown=nodejs:nodejs /app/package.json ./package.json
+COPY --from=builder --chown=nodejs:nodejs /app/prisma ./prisma
+
+# Generate Prisma client AS ROOT before switching users
+RUN npx prisma generate
+
+# Fix permissions for nodejs user after generation
+RUN chown -R nodejs:nodejs /app/node_modules/.prisma || true
+RUN chown -R nodejs:nodejs /app/node_modules/.pnpm/@prisma* || true
+
+# Switch to non-root user
+USER nodejs
 
 EXPOSE 6007
 
-ENV DOCKER_ENV=true
-ENV NODE_ENV=production
-
-CMD ["node", "dist/main.js"]
+# Direct execution since no entrypoint script needed
+CMD ["dumb-init", "node", "dist/main.js"]

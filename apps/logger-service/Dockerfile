@@ -3,55 +3,49 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-# Copy package files
-COPY apps/logger-service/package.json ./
-COPY pnpm-lock.yaml ./
-COPY pnpm-workspace.yaml ./
-
-# Copy workspace packages
-COPY packages/error-handler ./packages/error-handler
-COPY packages/utils/kafka ./packages/utils/kafka
-
-# Copy prisma directory
+# Copy root configs
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml nx.json tsconfig.base.json ./
 COPY prisma ./prisma
+COPY packages ./packages
+COPY apps/logger-service ./apps/logger-service
 
-# Enable pnpm and install dependencies
+# Install dependencies and build
 RUN corepack enable && corepack prepare pnpm@10.10.0 --activate
-RUN pnpm install --prod
-
-
-# Generate Prisma client
+RUN pnpm install
 RUN npx prisma generate
-
-# Copy built application
-COPY apps/logger-service ./dist
+RUN pnpm --filter logger-service run build
 
 # ---- Production Stage ----
 FROM node:20-alpine
 
 WORKDIR /app
 
-# Install system dependencies
-RUN apk add --no-cache openssl dumb-init
+RUN apk add --no-cache dumb-init openssl
 
 # Create non-root user
-RUN addgroup -g 1001 -S nodejs
-RUN adduser -S nodejs -u 1001
+RUN addgroup -g 1001 -S nodejs && adduser -S nodejs -u 1001
 
-# Copy built artifacts with correct ownership
-COPY --from=builder --chown=nodejs:nodejs /app/node_modules ./node_modules
-COPY --from=builder --chown=nodejs:nodejs /app/dist ./dist
-COPY --from=builder --chown=nodejs:nodejs /app/package.json ./
+# Install production dependencies AS ROOT
+COPY --from=builder /app/package.json ./package.json
+COPY --from=builder /app/pnpm-lock.yaml ./pnpm-lock.yaml
+RUN corepack enable && corepack prepare pnpm@10.10.0 --activate && pnpm install --prod
+
+# Copy built application
+COPY --from=builder --chown=nodejs:nodejs /app/apps/logger-service/dist ./dist
+COPY --from=builder --chown=nodejs:nodejs /app/package.json ./package.json
 COPY --from=builder --chown=nodejs:nodejs /app/prisma ./prisma
-COPY --from=builder --chown=nodejs:nodejs /app/packages ./packages
+
+# Generate Prisma client AS ROOT before switching users
+RUN npx prisma generate
+
+# Fix permissions for nodejs user after generation
+RUN chown -R nodejs:nodejs /app/node_modules/.prisma || true
+RUN chown -R nodejs:nodejs /app/node_modules/.pnpm/@prisma* || true
 
 # Switch to non-root user
 USER nodejs
 
 EXPOSE 6008
 
-ENV DOCKER_ENV=true
-ENV NODE_ENV=production
-
-# Use dumb-init to handle signals properly
+# Direct execution since no entrypoint script needed
 CMD ["dumb-init", "node", "dist/main.js"]

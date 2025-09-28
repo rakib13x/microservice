@@ -1,70 +1,51 @@
-# # ---- Build Stage ----
-# FROM node:20-alpine AS builder
-
-# WORKDIR /app
-
-# COPY apps/api-gateway/package.json ./
-# COPY pnpm-lock.yaml ./
-# COPY pnpm-workspace.yaml ./
-# COPY prisma ./prisma
-
-# RUN corepack enable && corepack prepare pnpm@10.10.0 --activate
-# RUN pnpm install --prod
-
-
-# RUN npx prisma generate
-
-# COPY apps/api-gateway ./dist
-
-# # ---- Production Stage ----
-# FROM node:20-alpine
-
-# WORKDIR /app
-
-# # Install OpenSSL for Prisma
-# RUN apk add --no-cache openssl
-
-# COPY --from=builder /app/node_modules ./node_modules
-# COPY --from=builder /app/dist ./dist
-# COPY --from=builder /app/package.json ./
-# COPY --from=builder /app/prisma ./prisma
-
-# EXPOSE 8080
-
-# CMD ["node", "dist/main.js"]
-
-
 # ---- Build Stage ----
 FROM node:20-alpine AS builder
+
 WORKDIR /app
 
-# Copy root package files
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
-COPY tsconfig.base.json tsconfig.json ./
+# Copy root configs
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml nx.json tsconfig.base.json ./
 COPY prisma ./prisma
-
-# Install root dependencies
-RUN corepack enable && corepack prepare pnpm@10.10.0 --activate
-RUN pnpm install --frozen-lockfile
-
-# Copy the api-gateway project
+COPY packages ./packages
 COPY apps/api-gateway ./apps/api-gateway
 
-# Build only api-gateway
-RUN pnpm --filter api-gateway install --frozen-lockfile
-RUN pnpm --filter api-gateway run build -- --skip-nx-cache
+# Install dependencies and build
+RUN corepack enable && corepack prepare pnpm@10.10.0 --activate
+RUN pnpm install
 RUN npx prisma generate
+RUN pnpm --filter api-gateway run build
 
 # ---- Production Stage ----
 FROM node:20-alpine
-WORKDIR /app
-RUN apk add --no-cache openssl
 
-# Copy build artifacts
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/apps/api-gateway/dist ./dist
-COPY --from=builder /app/apps/api-gateway/package.json ./
-COPY --from=builder /app/prisma ./prisma
+WORKDIR /app
+
+RUN apk add --no-cache dumb-init openssl
+
+# Create non-root user
+RUN addgroup -g 1001 -S nodejs && adduser -S nodejs -u 1001
+
+# Install production dependencies AS ROOT
+COPY --from=builder /app/package.json ./package.json
+COPY --from=builder /app/pnpm-lock.yaml ./pnpm-lock.yaml
+RUN corepack enable && corepack prepare pnpm@10.10.0 --activate && pnpm install --prod
+
+# Copy built application
+COPY --from=builder --chown=nodejs:nodejs /app/apps/api-gateway/dist ./dist
+COPY --from=builder --chown=nodejs:nodejs /app/package.json ./package.json
+COPY --from=builder --chown=nodejs:nodejs /app/prisma ./prisma
+
+# Generate Prisma client AS ROOT before switching users
+RUN npx prisma generate
+
+# Fix permissions for nodejs user after generation
+RUN chown -R nodejs:nodejs /app/node_modules/.prisma || true
+RUN chown -R nodejs:nodejs /app/node_modules/.pnpm/@prisma* || true
+
+# Switch to non-root user
+USER nodejs
 
 EXPOSE 8080
-CMD ["node", "dist/main.js"]
+
+# Direct execution since no entrypoint script needed
+CMD ["dumb-init", "node", "dist/main.js"]

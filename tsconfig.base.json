@@ -1,6 +1,7 @@
 {
   "compilerOptions": {
     "composite": true,
+     "jsx": "react-jsx",
     "declarationMap": true,
     "emitDeclarationOnly": true,
     "importHelpers": true,
